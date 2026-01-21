@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% block title %}身份驗證 - AI Navigator{% endblock %}
+
+{% block content %}
+<style>
+    /* === 登入頁專屬樣式 === */
+    .login-section {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at center, #0f172a 0%, #000 100%);
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* 背景動態網格 */
+    .grid-bg {
+        position: absolute; width: 100%; height: 100%;
+        background-image: linear-gradient(rgba(59, 130, 246, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59, 130, 246, 0.05) 1px, transparent 1px);
+        background-size: 30px 30px;
+        pointer-events: none;
+    }
+
+    /* 登入卡片：玻璃擬態 */
+    .login-card {
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 20px;
+        padding: 3rem;
+        width: 100%;
+        max-width: 450px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        position: relative;
+        z-index: 10;
+        overflow: hidden;
+    }
+
+    /* 頂部裝飾條 */
+    .login-card::before {
+        content: '';
+        position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+        background: linear-gradient(90deg, #0dcaf0, #3b82f6);
+    }
+
+    /* === 強制覆蓋 Django Form 預設樣式 === */
+    /* 這裡是用 CSS 暴力美化 input，不用改 Python code */
+    .login-form p {
+        margin-bottom: 1.5rem;
+    }
+    
+    .login-form label {
+        color: #94a3b8;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .login-form input[type="text"],
+    .login-form input[type="password"] {
+        width: 100%;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid #334155;
+        color: white;
+        padding: 12px 15px;
+        border-radius: 8px;
+        outline: none;
+        transition: all 0.3s;
+    }
+
+    .login-form input:focus {
+        border-color: #0dcaf0;
+        box-shadow: 0 0 15px rgba(13, 202, 240, 0.2);
+    }
+
+    /* 雷達動畫 */
+    .radar-scan {
+        width: 60px; height: 60px;
+        border: 2px solid #0dcaf0;
+        border-radius: 50%;
+        position: relative;
+        margin: 0 auto 20px;
+        box-shadow: 0 0 15px rgba(13, 202, 240, 0.4);
+    }
+    .radar-scan::after {
+        content: '';
+        position: absolute; top: 50%; left: 50%;
+        width: 50%; height: 50%;
+        background: linear-gradient(45deg, rgba(13, 202, 240, 0.8), transparent);
+        border-radius: 100% 0 0 0;
+        transform-origin: 0 0;
+        animation: radarSpin 2s linear infinite;
+    }
+    @keyframes radarSpin { 100% { transform: rotate(360deg); } }
+
+</style>
+
+<div class="login-section">
+    <div class="grid-bg"></div>
+    
+    <div class="login-card">
+        <div class="text-center mb-4">
+            <div class="radar-scan"></div>
+            <h2 class="text-white fw-bold">身份驗證</h2>
+            <p class="text-muted small">請輸入指揮官憑證以進入戰情室</p>
+        </div>
+
+        <form method="post" class="login-form">
+            {% csrf_token %}
+            
+            {{ form.as_p }}
+
+            <button type="submit" class="btn btn-info w-100 py-2 rounded-pill fw-bold mt-4 shadow-lg">
+                <i class="fa-solid fa-right-to-bracket me-2"></i> 確認登入
+            </button>
+            
+            <input type="hidden" name="next" value="{{ next }}">
+        </form>
+
+        <div class="text-center mt-4 border-top border-secondary pt-3">
+            <p class="text-muted small mb-0">還沒有識別證？</p>
+            <a href="#" class="text-info text-decoration-none small">申請新帳號 (尚未開放)</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

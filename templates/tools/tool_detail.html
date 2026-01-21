@@ -1,0 +1,272 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ tool.name }} - AI 軍火庫{% endblock %}
+
+{% block content %}
+<style>
+    /* === 1. 全局設定 === */
+    body {
+        background-color: #0b0f19 !important;
+        color: #e2e8f0;
+        overflow-x: hidden;
+    }
+    .arsenal-grid-bg {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+        background-image: 
+            linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 60px 60px;
+        z-index: 0; pointer-events: none;
+    }
+
+    /* === 2. 頂部 Header (保留您滿意的樣式) === */
+    .tool-header {
+        background: radial-gradient(circle at top center, rgba(13, 202, 240, 0.15) 0%, #0b0f19 80%);
+        color: white;
+        padding: 8rem 0 120px; /* 稍微縮短下方留白，讓內容更緊湊 */
+        position: relative;
+        overflow: hidden;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .glow-effect {
+        position: absolute; width: 600px; height: 600px;
+        background: radial-gradient(circle, rgba(13, 202, 240, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+        top: -200px; left: 50%; transform: translateX(-50%);
+        border-radius: 50%; pointer-events: none; z-index: 1;
+    }
+    .header-content-wrapper { position: relative; z-index: 50; text-align: center; }
+
+    /* === 3. 按鈕 (Cyan) === */
+    .btn-neon {
+        background: #0dcaf0; color: #000; border: none; border-radius: 50px;
+        padding: 12px 30px; font-weight: bold;
+        box-shadow: 0 0 20px rgba(13, 202, 240, 0.4); transition: all 0.3s;
+    }
+    .btn-neon:hover {
+        background: #0aa2c0; transform: translateY(-3px);
+        box-shadow: 0 0 30px rgba(13, 202, 240, 0.6); color: #000;
+    }
+    .btn-fav {
+        background: rgba(255,255,255,0.05); color: #cbd5e1;
+        border: 1px solid rgba(255,255,255,0.1); border-radius: 50px; padding: 12px 25px;
+        transition: all 0.3s;
+    }
+    .btn-fav:hover {
+        background: rgba(255,255,255,0.1); color: #f43f5e; border-color: #f43f5e;
+        transform: translateY(-2px);
+    }
+
+    /* === 4. 內容區塊 (玻璃卡片) === */
+    .content-card {
+        background: rgba(30, 41, 59, 0.6);
+        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px; padding: 30px;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    
+    /* 側邊欄的小卡片 */
+    .sidebar-item {
+        background: rgba(15, 23, 42, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px; padding: 15px;
+        margin-bottom: 15px; transition: all 0.3s;
+        display: flex; gap: 15px; align-items: center;
+    }
+    .sidebar-item:hover {
+        background: rgba(15, 23, 42, 0.8);
+        border-color: #0dcaf0; transform: translateX(-5px);
+    }
+    .sidebar-thumb {
+        width: 60px; height: 60px; border-radius: 8px; object-fit: cover; background: #000; flex-shrink: 0;
+    }
+    .sidebar-title { font-size: 0.95rem; font-weight: bold; color: #fff; line-height: 1.4; margin-bottom: 4px; }
+    .sidebar-meta { font-size: 0.8rem; color: #94a3b8; }
+
+    /* === 5. 留言區 === */
+    .comment-box {
+        background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px; padding: 20px; margin-top: 1.5rem;
+    }
+    .form-control-dark {
+        background: rgba(15, 23, 42, 0.8) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important; color: white !important;
+    }
+    .form-control-dark:focus { border-color: #0dcaf0 !important; box-shadow: 0 0 0 0.25rem rgba(13, 202, 240, 0.25) !important; }
+</style>
+
+<div class="arsenal-grid-bg"></div>
+
+<div class="tool-header">
+    <div class="glow-effect"></div>
+    <div class="container header-content-wrapper">
+        <div style="max-width: 900px; margin: 0 auto;">
+            <div style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px;">
+                {% if tool.image %}
+                    <img src="{{ tool.image.url }}" alt="{{ tool.name }}" style="width: 60px; height: 60px; border-radius: 12px; object-fit: cover; border: 1px solid rgba(255,255,255,0.2);">
+                {% endif %}
+                <span class="badge bg-info bg-opacity-25 text-info border border-info border-opacity-25 rounded-pill px-3 py-2">
+                    {{ tool.category|default:"AI Tool" }}
+                </span>
+                {% if tool.is_featured %}
+                    <span class="badge bg-warning bg-opacity-25 text-warning border border-warning border-opacity-25 rounded-pill px-3 py-2">
+                        <i class="fa-solid fa-star"></i> 精選推薦
+                    </span>
+                {% endif %}
+                <span class="text-secondary ms-2 small"><i class="fa-solid fa-eye me-1"></i> {{ tool.views }} 人看過</span>
+            </div>
+            <h1 style="font-size: 3.5rem; font-weight: 800; margin-bottom: 2rem; letter-spacing: -1px; text-shadow: 0 0 30px rgba(13, 202, 240, 0.6);">
+                {{ tool.name }}
+            </h1>
+            <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+                {% if tool.website_url %}
+                    <a href="{{ tool.website_url }}" target="_blank" class="btn btn-neon">
+                        <i class="fa-solid fa-rocket me-2"></i> 前往官網
+                    </a>
+                {% endif %}
+                {% if user.is_authenticated %}
+                <a href="{% url 'tool_favorite' tool.slug %}" class="btn btn-fav">
+                    {% if user in tool.favorites.all %}
+                        <i class="fa-solid fa-heart" style="color: #f43f5e;"></i> 已收藏
+                    {% else %}
+                        <i class="fa-regular fa-heart"></i> 收藏
+                    {% endif %}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container position-relative" style="margin-top: -60px; z-index: 2; padding-bottom: 5rem;">
+    <div class="row g-4">
+        
+        <div class="col-lg-8">
+            
+            <div class="content-card">
+                <h4 style="color: #fff; margin-bottom: 1.5rem; font-weight: bold; border-left: 4px solid #0dcaf0; padding-left: 15px;">
+                    工具情報
+                </h4>
+                <div style="font-size: 1.1rem; line-height: 1.8; color: #cbd5e1; white-space: pre-wrap;">{{ tool.description|default:"暫無詳細情報。" }}</div>
+            </div>
+
+            <div class="content-card" style="border-top: 4px solid #0dcaf0;">
+                <h4 style="color: #fff; margin-bottom: 1.5rem; font-weight: bold; display: flex; align-items: center; gap: 10px;">
+                    <i class="fa-regular fa-comments"></i> 指揮官通訊 ({{ tool.comments.count }})
+                </h4>
+                
+                {% if user.is_authenticated %}
+                    <div class="comment-box">
+                        <p class="text-muted mb-2 small">發送者: <span class="text-info fw-bold">{{ user.username }}</span></p>
+                        <form method="post" action="{% url 'add_comment' tool.slug %}">
+                            {% csrf_token %}
+                            <textarea name="content" class="form-control form-control-dark" rows="3" required placeholder="分享戰術心得..."></textarea>
+                            <div class="text-end mt-2">
+                                <button type="submit" class="btn btn-info btn-sm rounded-pill px-4 fw-bold">
+                                    <i class="fa-solid fa-paper-plane me-1"></i> 發布
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                {% else %}
+                    <div class="text-center py-3 border border-secondary border-dashed rounded mt-3">
+                        <small class="text-muted"><a href="{% url 'login' %}" class="text-info text-decoration-none">登入</a> 後啟用通訊頻道</small>
+                    </div>
+                {% endif %}
+
+                <div class="mt-4">
+                    {% for comment in tool.comments.all reversed %}
+                    <div class="border-bottom border-secondary border-opacity-25 py-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <strong class="text-info">{{ comment.user.username }}</strong>
+                            <small class="text-muted">{{ comment.created_at|date:"Y/m/d" }}</small>
+                        </div>
+                        <p class="text-light mb-0 small opacity-75">{{ comment.content }}</p>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-4 text-muted small">尚無通訊記錄</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            
+            <div class="content-card p-4">
+                <h5 class="text-white fw-bold mb-3"><i class="fa-solid fa-graduation-cap text-warning me-2"></i>戰術指南</h5>
+                {% if related_articles %}
+                    <div class="d-flex flex-column">
+                        {% for article in related_articles %}
+                        <a href="{% url 'article_detail' article.slug %}" class="text-decoration-none">
+                            <div class="sidebar-item">
+                                {% if article.cover_image %}
+                                    <img src="{{ article.cover_image.url }}" class="sidebar-thumb">
+                                {% else %}
+                                    <div class="sidebar-thumb d-flex align-items-center justify-content-center text-secondary">
+                                        <i class="fa-solid fa-book"></i>
+                                    </div>
+                                {% endif %}
+                                
+                                <div>
+                                    <div class="sidebar-title text-truncate" style="max-width: 180px;">{{ article.title }}</div>
+                                    <div class="sidebar-meta"><i class="fa-regular fa-clock me-1"></i>{{ article.created_at|date:"m/d" }}</div>
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted small py-3 border border-dashed border-secondary rounded">
+                        暫無教學文件
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="content-card p-4">
+                <h5 class="text-white fw-bold mb-3"><i class="fa-solid fa-flask text-success me-2"></i>實驗成果</h5>
+                {% if tool.lab_projects.all %}
+                    <div class="d-flex flex-column">
+                        {% for project in tool.lab_projects.all %}
+                        <a href="{% url 'lab_detail' project.pk %}" class="text-decoration-none">
+                            <div class="sidebar-item">
+                                {% if project.cover_image %}
+                                    <img src="{{ project.cover_image.url }}" class="sidebar-thumb">
+                                {% elif project.video %}
+                                    <div class="sidebar-thumb d-flex align-items-center justify-content-center bg-black">
+                                        <i class="fa-solid fa-play text-white"></i>
+                                    </div>
+                                {% else %}
+                                    <div class="sidebar-thumb d-flex align-items-center justify-content-center text-secondary">
+                                        <i class="fa-solid fa-image"></i>
+                                    </div>
+                                {% endif %}
+                                
+                                <div>
+                                    <div class="sidebar-title text-truncate" style="max-width: 180px;">{{ project.title }}</div>
+                                    <div class="sidebar-meta text-success">Verified</div>
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted small py-3 border border-dashed border-secondary rounded">
+                        <a href="/admin/labs/labproject/add/" class="text-info text-decoration-none">
+                            <i class="fa-solid fa-plus me-1"></i> 新增實驗
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+
+    <div class="text-center mt-4">
+        <a href="{% url 'tool_list' %}" class="btn btn-outline-secondary rounded-pill px-4 btn-sm">
+            <i class="fa-solid fa-arrow-left me-1"></i> 返回軍火庫
+        </a>
+    </div>
+</div>
+{% endblock %}

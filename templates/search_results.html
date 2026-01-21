@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}搜尋結果: {{ query }} - AI Navigator{% endblock %}
+
+{% block content %}
+<style>
+    /* === 1. 搜尋結果頁 Header === */
+    .search-header {
+        background: radial-gradient(circle at center, #0f172a 0%, #1e293b 100%);
+        padding: 8rem 0 6rem;
+        text-align: center;
+        margin-bottom: 4rem;
+        border-bottom: 1px solid #334155;
+    }
+    
+    .stat-badge {
+        background: rgba(30, 41, 59, 0.6);
+        border: 1px solid #475569;
+        border-radius: 12px;
+        padding: 15px 30px;
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 0 10px;
+        min-width: 110px;
+        transition: transform 0.2s;
+    }
+    .stat-badge:hover {
+        transform: translateY(-5px);
+        background: rgba(51, 65, 85, 0.8);
+        border-color: #64748b;
+    }
+    .stat-number { font-size: 1.8rem; font-weight: 800; line-height: 1; margin-bottom: 5px; }
+    .stat-label { color: #94a3b8; font-size: 0.85rem; }
+
+    /* === 2. 區塊標題 === */
+    .section-title {
+        color: white; font-weight: bold; margin-bottom: 1.5rem;
+        display: flex; align-items: center; gap: 10px;
+        border-left: 5px solid #3b82f6; padding-left: 15px;
+    }
+</style>
+
+<div class="search-header">
+    <div class="container">
+        <h1 class="text-white fw-bold mb-3" style="font-size: 3rem;">
+            <i class="fa-solid fa-magnifying-glass text-primary"></i> 搜尋結果
+        </h1>
+        <p class="text-light fs-5 mb-5">
+            關鍵字：<span class="text-warning fw-bold px-2" style="background: rgba(245, 158, 11, 0.1); border-radius: 5px;">{{ query }}</span>
+        </p>
+        
+        <div class="d-flex justify-content-center flex-wrap gap-3">
+            <div class="stat-badge">
+                <div class="stat-number text-primary">{{ tools|length }}</div>
+                <div class="stat-label">個工具</div>
+            </div>
+            <div class="stat-badge">
+                <div class="stat-number text-info">{{ articles|length }}</div>
+                <div class="stat-label">篇教學</div>
+            </div>
+            <div class="stat-badge">
+                <div class="stat-number text-success">{{ projects|length }}</div>
+                <div class="stat-label">項實驗</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container pb-5">
+
+    {% if tools %}
+    <div class="mb-5">
+        <h3 class="section-title" style="border-color: #3b82f6;">
+            <i class="fa-solid fa-rocket text-primary"></i> 相關工具
+        </h3>
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            {% for tool in tools %}
+            <div class="col">
+                <a href="{% url 'tool_detail' tool.slug %}" class="text-decoration-none">
+                    <div class="card h-100 bg-dark border-secondary" style="transition: transform 0.2s;">
+                        <div class="card-body">
+                             <div class="d-flex justify-content-between mb-2">
+                                <span class="badge bg-secondary">{{ tool.category }}</span>
+                                <small class="text-muted"><i class="fa-solid fa-eye"></i> {{ tool.views }}</small>
+                             </div>
+                             <h5 class="card-title text-white fw-bold">{{ tool.name }}</h5>
+                             <p class="text-muted small mb-0">{{ tool.description|truncatechars:60 }}</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if articles %}
+    <div class="mb-5">
+        <h3 class="section-title" style="border-color: #0dcaf0;">
+            <i class="fa-solid fa-graduation-cap text-info"></i> 相關教學
+        </h3>
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            {% for article in articles %}
+            <div class="col">
+                <a href="{% url 'article_detail' article.slug %}" class="text-decoration-none">
+                    <div class="card h-100 bg-dark border-secondary">
+                        <div class="card-body">
+                            <span class="badge bg-info text-dark mb-2">{{ article.category }}</span>
+                            <h5 class="card-title text-white fw-bold">{{ article.title }}</h5>
+                            <p class="text-muted small">{{ article.content|striptags|truncatechars:50 }}</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if projects %}
+    <div class="mb-5">
+        <h3 class="section-title" style="border-color: #10b981;">
+            <i class="fa-solid fa-flask text-success"></i> 實驗室作品
+        </h3>
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            {% for project in projects %}
+            <div class="col">
+                <a href="{% url 'lab_detail' project.pk %}" class="text-decoration-none">
+                    <div class="card h-100 bg-dark border-secondary">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h5 class="card-title text-white fw-bold mb-0 text-truncate">{{ project.title }}</h5>
+                                {% if project.related_tool %}
+                                <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25" style="font-size: 0.7em;">
+                                    {{ project.related_tool.name }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            <code class="text-success small d-block mb-2 text-truncate">{{ project.prompt_text|default:"Prompt..." }}</code>
+                            <p class="text-muted small mb-0">{{ project.description|truncatechars:50 }}</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if not tools and not articles and not projects %}
+        <div class="text-center py-5">
+            <div style="background: #1e293b; display: inline-block; padding: 40px; border-radius: 20px; border: 1px dashed #475569;">
+                 <i class="fa-solid fa-magnifying-glass-minus fa-3x text-secondary mb-3"></i>
+                 <h3 class="text-light">找不到相關內容</h3>
+                 <p class="text-muted">試試看更換關鍵字，例如「ChatGPT」、「圖片」或「Prompt」。</p>
+                 <a href="{% url 'home' %}" class="btn btn-outline-primary mt-3 rounded-pill">回首頁逛逛</a>
+            </div>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

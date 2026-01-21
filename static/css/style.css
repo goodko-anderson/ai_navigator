@@ -1,0 +1,300 @@
+          /* --- 1. 變數設定 --- */
+        :root {
+            --bg-color: #0F172A;       
+            --primary-color: #0ABAB5;  /* Tiffany Green */
+            --accent-color: #8B5CF6;   
+            --text-main: #F8FAFC;      
+            --text-dim: #94A3B8;       
+            --glass-bg: rgba(255, 255, 255, 0.03); 
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --card-hover: rgba(10, 186, 181, 0.1);
+        }
+
+        /* --- 2. 全局重置 --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        a { text-decoration: none; color: inherit; transition: 0.3s; }
+        ul { list-style: none; }
+
+        /* --- 3. 通用元件 --- */
+        .container {
+            max_width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* ⭐ 修正重點：改用深色文字以提升對比度 ⭐ */
+        .btn-primary {
+            background: var(--primary-color);
+            /* 改成跟背景一樣的深色，或是純黑 #000 */
+            color: var(--bg-color); 
+            font-weight: 700; /* 加粗 */
+            box-shadow: 0 4px 14px rgba(10, 186, 181, 0.4);
+        }
+
+        .btn-primary:hover {
+            /* Hover 時變亮一點，增加通透感 */
+            background: #2dd4cf;
+            color: var(--bg-color);
+            transform: translateY(-2px);
+        }
+
+        /* --- 4. 導覽列 --- */
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            padding: 15px 0;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .logo i {
+            color: var(--primary-color);
+            font-size: 1.8rem;
+        }
+
+        .nav-links { display: flex; gap: 30px; }
+        .nav-links a { color: var(--text-dim); font-size: 0.95rem; }
+        .nav-links a:hover { color: var(--primary-color); }
+
+        /* --- 5. 英雄區塊 --- */
+        .hero {
+            padding: 160px 0 100px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(10, 186, 181, 0.15) 0%, rgba(15, 23, 42, 0) 70%);
+            z-index: -1;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            line-height: 1.2;
+            margin-bottom: 20px;
+            background: linear-gradient(to right, #fff, #94A3B8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            color: var(--text-dim);
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto 40px;
+        }
+
+        .search-box {
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 18px 24px;
+            padding-left: 50px;
+            font-size: 1.1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            color: white;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(10, 186, 181, 0.2);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-dim);
+        }
+
+        .tags {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .tag {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            padding: 5px 12px;
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .tag:hover {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        /* --- 6. 角色分流 --- */
+        .roles-section { padding: 80px 0; }
+        .section-title { text-align: center; font-size: 2rem; margin-bottom: 50px; }
+        .section-title span { color: var(--primary-color); }
+
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .role-card {
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .role-card:hover {
+            background: var(--card-hover);
+            transform: translateY(-5px);
+            border-color: var(--primary-color);
+        }
+
+        .role-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+
+        .role-card h3 { margin-bottom: 10px; }
+        .role-card p { color: var(--text-dim); font-size: 0.9rem; }
+
+        /* --- 7. 熱門工具 --- */
+        .tools-section {
+            padding: 80px 0;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .tool-card {
+            padding: 25px;
+            transition: 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tool-card:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 20px rgba(10, 186, 181, 0.15);
+        }
+
+        .tool-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .tool-icon {
+            width: 50px;
+            height: 50px;
+            background: #fff;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #000;
+        }
+
+        .rating { color: #FFD700; font-size: 0.9rem; font-weight: 600; }
+
+        .tool-tags { display: flex; gap: 8px; margin-top: 15px; }
+        .tool-tag {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            color: var(--text-dim);
+        }
+
+        /* --- 8. Footer --- */
+        footer {
+            padding: 60px 0 20px;
+            border-top: 1px solid var(--glass-border);
+            margin-top: 60px;
+            text-align: center;
+            color: var(--text-dim);
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            .bento-grid { grid-template-columns: 1fr; }
+            .nav-links { display: none; }
+        }
+
+        /* --- 修正導覽列按鈕文字顏色 --- */
+.nav-links a.btn-primary {
+    color: var(--bg-color) !important; /* 強制使用深色字體 */
+    opacity: 1;
+}

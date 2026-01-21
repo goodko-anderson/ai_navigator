@@ -1,0 +1,332 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AI Navigator - 戰情中心{% endblock %}
+
+{% block content %}
+<style>
+    /* =========================================
+       1. 全局背景特效
+       ========================================= */
+    body {
+        background-color: #0b0f19 !important; 
+        position: relative;
+        overflow-x: hidden;
+    }
+
+    .glow-blob-1 {
+        position: fixed; top: 10%; left: -10%; width: 700px; height: 700px;
+        background: radial-gradient(circle, rgba(124, 58, 237, 0.4) 0%, rgba(0,0,0,0) 70%);
+        border-radius: 50%; filter: blur(80px); z-index: 0;
+        animation: floatBlob 20s infinite alternate; pointer-events: none;
+    }
+
+    .glow-blob-2 {
+        position: fixed; bottom: 5%; right: -5%; width: 600px; height: 600px;
+        background: radial-gradient(circle, rgba(59, 130, 246, 0.4) 0%, rgba(0,0,0,0) 70%);
+        border-radius: 50%; filter: blur(80px); z-index: 0;
+        animation: floatBlob 25s infinite alternate-reverse; pointer-events: none;
+    }
+
+    @keyframes floatBlob {
+        0% { transform: translate(0, 0) scale(1); }
+        100% { transform: translate(50px, 80px) scale(1.1); }
+    }
+
+    /* =========================================
+       2. Hero Section
+       ========================================= */
+    .hero-section, .container { position: relative; z-index: 2; }
+
+    .hero-section {
+        padding: 9rem 0 7rem; text-align: center; background: transparent; 
+    }
+    
+    .hero-title {
+        font-size: 3.8rem; font-weight: 900; letter-spacing: -1px; color: white;
+        margin-bottom: 1rem; text-shadow: 0 0 50px rgba(59, 130, 246, 0.5);
+    }
+    
+    .typewriter-box {
+        min-height: 3rem; margin-bottom: 3.5rem;
+        display: flex; justify-content: center; align-items: center;
+    }
+    .typewriter-text {
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 1.5rem; color: #0dcaf0; font-weight: bold;
+        text-shadow: 0 0 10px rgba(13, 202, 240, 0.6);
+    }
+    .cursor {
+        display: inline-block; width: 12px; height: 3px;
+        background-color: #0dcaf0; margin-left: 5px;
+        animation: blink 1s infinite; box-shadow: 0 0 10px #0dcaf0;
+    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+    .btn-hero-primary {
+        background: rgba(16, 185, 129, 0.8); backdrop-filter: blur(10px);
+        border: 1px solid rgba(16, 185, 129, 0.5);
+        color: white; padding: 12px 40px; font-size: 1.1rem;
+        border-radius: 50px; font-weight: bold;
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.2); transition: all 0.3s ease;
+    }
+    .btn-hero-primary:hover {
+        background: #10b981;
+        box-shadow: 0 0 40px rgba(16, 185, 129, 0.6); transform: translateY(-3px); color: white;
+    }
+
+    .btn-hero-secondary {
+        background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2); color: #cbd5e1;
+        padding: 10px 35px; font-size: 1.1rem; border-radius: 50px;
+        font-weight: bold; transition: all 0.3s ease;
+    }
+    .btn-hero-secondary:hover {
+        border-color: #3b82f6; color: white; background: rgba(59, 130, 246, 0.2);
+        box-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
+    }
+
+    /* =========================================
+       3. Bento Grid
+       ========================================= */
+    .bento-card {
+        background: rgba(30, 41, 59, 0.3); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        border-radius: 24px; overflow: hidden; position: relative; height: 100%;
+        transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); z-index: 1;
+    }
+    
+    .bento-card:hover {
+        transform: translateY(-5px);
+        background: rgba(30, 41, 59, 0.5); border-color: rgba(255, 255, 255, 0.3);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .spotlight-card::before {
+        content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+        border-radius: 24px; padding: 1.5px; width: 100%; height: 100%;
+        background: radial-gradient(600px circle at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.4), transparent 40%);
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor; mask-composite: exclude;
+        opacity: 0; transition: opacity 0.5s ease; pointer-events: none; z-index: 2;
+    }
+    .spotlight-card:hover::before { opacity: 1; }
+
+    .bento-featured-img {
+        width: 100%; height: 350px; object-fit: cover; transition: transform 0.7s ease; opacity: 0.95; 
+    }
+    .bento-card:hover .bento-featured-img { transform: scale(1.05); opacity: 1; }
+    
+    .bento-overlay {
+        position: absolute; bottom: 0; left: 0; width: 100%;
+        background: linear-gradient(to top, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0) 100%);
+        padding: 3rem 2rem 1.5rem; z-index: 3;
+    }
+
+    .status-card {
+        background: rgba(255, 255, 255, 0.03); padding: 1.5rem;
+        display: flex; justify-content: space-between; align-items: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .status-indicator {
+        width: 8px; height: 8px; background-color: #10b981; border-radius: 50%;
+        box-shadow: 0 0 15px #10b981; animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0% { opacity: 1; box-shadow: 0 0 10px #10b981; } 50% { opacity: 0.4; box-shadow: 0 0 0px #10b981; } 100% { opacity: 1; box-shadow: 0 0 10px #10b981; } }
+
+    .tool-list-item {
+        display: flex; align-items: center; padding: 12px 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        transition: background 0.2s; text-decoration: none; position: relative; z-index: 3;
+    }
+    .tool-list-item:hover { background: rgba(255, 255, 255, 0.05); }
+    
+    .tool-list-icon {
+        width: 40px; height: 40px; border-radius: 10px; background: rgba(0,0,0,0.3);
+        object-fit: cover; margin-right: 12px; display: flex; align-items: center; justify-content: center;
+        color: #94a3b8; border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .section-label {
+        font-size: 0.85rem; letter-spacing: 1.5px; color: #94a3b8; 
+        text-transform: uppercase; font-weight: bold; margin-bottom: 1rem; display: block; opacity: 0.8;
+    }
+
+    .sticky-sidebar { position: -webkit-sticky; position: sticky; top: 2rem; z-index: 10; }
+</style>
+
+<div class="glow-blob-1"></div>
+<div class="glow-blob-2"></div>
+
+<div class="hero-section">
+    <div class="container hero-content">
+        <h1 class="hero-title">探索 AI 的無限可能</h1>
+        <div class="typewriter-box">
+            <span id="typewriter-text" class="typewriter-text"></span><span class="cursor">_</span>
+        </div>
+        <form action="{% url 'search' %}" method="get" class="mb-5 position-relative mx-auto" style="max-width: 600px;">
+            <input type="text" name="q" class="form-control rounded-pill py-3 px-5 border-0 text-white" 
+                   placeholder="搜尋工具、教學或 Prompt..." 
+                   style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+            <button type="submit" class="btn position-absolute top-50 end-0 translate-middle-y me-3 text-info" style="border: none;">
+                <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+            </button>
+        </form>
+        <div class="d-flex gap-3 justify-content-center flex-column flex-md-row px-4">
+            <a href="{% url 'lab_list' %}" class="btn btn-hero-primary"><i class="fa-solid fa-flask me-2"></i> 進入實驗室</a>
+            <a href="{% url 'tool_list' %}" class="btn btn-hero-secondary"><i class="fa-solid fa-rocket me-2"></i> 瀏覽軍火庫</a>
+        </div>
+    </div>
+</div>
+
+<div class="container py-5" style="position: relative; z-index: 2;">
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <span class="section-label"><i class="fa-solid fa-satellite-dish me-2"></i> 最新觀測 (Latest Labs)</span>
+            
+            {% if latest_projects %}
+                {% with featured=latest_projects.0 %}
+                <div class="mb-4">
+                    <a href="{% url 'lab_detail' featured.pk %}" class="text-decoration-none">
+                        <div class="bento-card spotlight-card">
+                            {% if featured.cover_image %}
+                                <img src="{{ featured.cover_image.url }}" class="bento-featured-img" alt="{{ featured.title }}">
+                            {% elif featured.related_tool %}
+                                <img src="{% static 'images/tools/'|add:featured.related_tool.slug|add:'.jpg' %}" 
+                                     class="bento-featured-img" 
+                                     alt="{{ featured.related_tool.name }}">
+                            {% else %}
+                                <div class="bento-featured-img d-flex align-items-center justify-content-center" style="background: rgba(0,0,0,0.2);">
+                                    <i class="fa-regular fa-image fa-3x text-secondary"></i>
+                                </div>
+                            {% endif %}
+                            
+                            <div class="bento-overlay">
+                                <span class="badge bg-success mb-2 backdrop-blur">New Arrival</span>
+                                <h3 class="text-white fw-bold mb-1">{{ featured.title }}</h3>
+                                <p class="text-light opacity-75 small m-0">
+                                    <i class="fa-solid fa-wrench me-1"></i> {{ featured.related_tool.name }} 
+                                    <span class="mx-2">|</span> 
+                                    {{ featured.created_at|date:"Y/m/d" }}
+                                </p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                {% endwith %}
+
+                <div class="row g-4">
+                    {% for project in latest_projects|slice:"1:3" %}
+                    <div class="col-md-6">
+                        <a href="{% url 'lab_detail' project.pk %}" class="text-decoration-none">
+                            <div class="bento-card spotlight-card">
+                                {% if project.cover_image %}
+                                    <img src="{{ project.cover_image.url }}" class="bento-sub-img" alt="{{ project.title }}" style="width:100%; height:200px; object-fit:cover;">
+                                {% elif project.related_tool %}
+                                    <img src="{% static 'images/tools/'|add:project.related_tool.slug|add:'.jpg' %}" 
+                                         class="bento-sub-img" 
+                                         alt="{{ project.related_tool.name }}"
+                                         style="width:100%; height:200px; object-fit:cover;">
+                                {% else %}
+                                    <div class="bg-dark d-flex align-items-center justify-content-center" style="height:200px;">
+                                        <i class="fa-regular fa-image fa-2x text-secondary"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="p-3">
+                                    <h6 class="text-white fw-bold mb-1 text-truncate">{{ project.title }}</h6>
+                                    <small class="text-muted"><i class="fa-solid fa-flask me-1"></i> {{ project.related_tool.name }}</small>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="p-5 border border-secondary border-dashed rounded text-center text-muted" style="background: rgba(255,255,255,0.02);">
+                    <i class="fa-solid fa-flask-vial fa-2x mb-3 opacity-50"></i>
+                    <p>目前實驗室還沒有數據，指揮官請發布第一篇實驗！</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="col-lg-4">
+            <div class="sticky-sidebar">
+                <span class="section-label"><i class="fa-solid fa-server me-2"></i> 系統狀態 (System)</span>
+                <div class="bento-card mb-4 spotlight-card">
+                    <div class="status-card">
+                        <div>
+                            <small class="text-muted d-block uppercase" style="font-size: 0.7rem; letter-spacing:1px;">SYSTEM STATUS</small>
+                            <span class="text-white fw-bold" style="text-shadow: 0 0 10px rgba(16,185,129,0.5);">ONLINE</span>
+                        </div>
+                        <div class="status-indicator"></div>
+                    </div>
+                    <div class="p-3">
+                        <div class="d-flex justify-content-between mb-2 border-bottom border-secondary border-opacity-25 pb-2">
+                            <small class="text-muted">Date</small>
+                            <small class="text-white">{% now "Y-m-d" %}</small>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">Operator</small>
+                            <small class="text-info">{{ user.username|default:"Commander" }}</small>
+                        </div>
+                    </div>
+                </div>
+
+                <span class="section-label"><i class="fa-solid fa-fire me-2"></i> 熱門配備 (Trending)</span>
+                <div class="bento-card spotlight-card">
+                    <div class="d-flex flex-column">
+                        {% for tool in popular_tools|slice:":5" %}
+                        <a href="{% url 'tool_detail' tool.slug %}" class="tool-list-item">
+                            {% if tool.image %}
+                                <img src="{{ tool.image.url }}" class="tool-list-icon" alt="{{ tool.name }}">
+                            {% else %}
+                                <div class="tool-list-icon"><i class="fa-solid fa-toolbox"></i></div>
+                            {% endif %}
+                            <div class="flex-grow-1">
+                                <h6 class="text-white fw-bold mb-0" style="font-size: 0.95rem;">{{ tool.name }}</h6>
+                                <small class="text-muted" style="font-size: 0.8rem;">{{ tool.category|default:"AI Tool" }}</small>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-info"><i class="fa-solid fa-eye me-1"></i>{{ tool.views }}</small>
+                            </div>
+                        </a>
+                        {% empty %}
+                        <div class="p-4 text-center text-muted small">尚無熱門工具數據</div>
+                        {% endfor %}
+                    </div>
+                    <div class="p-2 border-top border-secondary border-opacity-25 text-center" style="background: rgba(0,0,0,0.2);">
+                        <a href="{% url 'tool_list' %}" class="text-decoration-none text-muted small hover-white">VIEW ALL ARSENAL <i class="fa-solid fa-arrow-right ms-1"></i></a>
+                    </div>
+                </div>
+            </div> 
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const phrases = ["歡迎來到 AI Navigator 戰情中心。", "正在連結神經網絡...", "系統初始化完成...", "搜尋最強 AI 生產力工具...", "解析 Prompt 咒語中...", "指揮官，請下達指令。"];
+        const textElement = document.getElementById('typewriter-text');
+        if (textElement) {
+            let phraseIndex = 0; let charIndex = 0; let isDeleting = false; let typeSpeed = 100;
+            function type() {
+                const currentPhrase = phrases[phraseIndex];
+                if (isDeleting) { textElement.textContent = currentPhrase.substring(0, charIndex - 1); charIndex--; typeSpeed = 50; }
+                else { textElement.textContent = currentPhrase.substring(0, charIndex + 1); charIndex++; typeSpeed = 100; }
+                if (!isDeleting && charIndex === currentPhrase.length) { isDeleting = true; typeSpeed = 2000; }
+                else if (isDeleting && charIndex === 0) { isDeleting = false; phraseIndex = (phraseIndex + 1) % phrases.length; typeSpeed = 500; }
+                setTimeout(type, typeSpeed);
+            }
+            type();
+        }
+        const cards = document.querySelectorAll(".spotlight-card");
+        document.addEventListener("mousemove", (e) => {
+            cards.forEach((card) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left; const y = e.clientY - rect.top;
+                card.style.setProperty("--mouse-x", `${x}px`); card.style.setProperty("--mouse-y", `${y}px`);
+            });
+        });
+    });
+</script>
+{% endblock %}

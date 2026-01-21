@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}會員登入{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 100px 0; display: flex; justify-content: center;">
+    <div class="glass" style="padding: 40px; width: 100%; max-width: 400px; text-align: center;">
+        
+        <h2 style="margin-bottom: 30px; font-size: 1.8rem;">
+            <i class="fa-solid fa-user-astronaut" style="color: var(--primary-color);"></i> 會員登入
+        </h2>
+
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+                <div style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; padding: 10px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem;">
+                    帳號或密碼錯誤，請重試。
+                </div>
+            {% endif %}
+
+            <div style="margin-bottom: 20px; text-align: left;">
+                <label style="color: var(--text-dim); font-size: 0.9rem; margin-bottom: 5px; display: block;">使用者名稱</label>
+                <input type="text" name="username" class="form-control" required autofocus
+                       style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 8px; color: white; outline: none;">
+            </div>
+
+            <div style="margin-bottom: 30px; text-align: left;">
+                <label style="color: var(--text-dim); font-size: 0.9rem; margin-bottom: 5px; display: block;">密碼</label>
+                <input type="password" name="password" class="form-control" required
+                       style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 8px; color: white; outline: none;">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 1rem;">
+                立即登入
+            </button>
+        </form>
+        
+        <p style="margin-top: 20px; font-size: 0.9rem; color: var(--text-dim);">
+            還沒有帳號？(暫未開放註冊)
+        </p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ project.title }} - 實戰實驗室{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/lab.css' %}">
+
+<script defer src="https://cdn.jsdelivr.net/npm/img-comparison-slider@8/dist/index.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/img-comparison-slider@8/dist/styles.css" />
+
+<style>
+    /* === 詳情頁專屬樣式 === */
+    .lab-detail-container { padding-top: 8rem; padding-bottom: 5rem; }
+
+    /* 麵包屑導航 */
+    .breadcrumb-nav a { color: #94a3b8; text-decoration: none; transition: color 0.2s; }
+    .breadcrumb-nav a:hover { color: #10b981; }
+    .breadcrumb-nav .active { color: #fff; font-weight: bold; }
+
+    /* 媒體展示區 */
+    .media-stage {
+        background: #000; border-radius: 16px; border: 1px solid #334155;
+        overflow: hidden; box-shadow: 0 0 50px rgba(16, 185, 129, 0.1);
+        display: flex; justify-content: center; align-items: center; min-height: 400px;
+    }
+    .media-stage img, .media-stage video {
+        width: 100%; height: auto; max-height: 80vh; object-fit: contain;
+        background: radial-gradient(circle, #1e293b 0%, #000 100%);
+    }
+
+    img-comparison-slider { width: 100%; outline: none; --divider-color: #10b981; }
+    .custom-handle {
+        width: 40px; height: 40px; background: #10b981; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center; color: white;
+        box-shadow: 0 0 15px rgba(16, 185, 129, 0.5); cursor: col-resize;
+    }
+
+    /* === AI 文章內容樣式 === */
+    .ai-content-box {
+        background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(16, 185, 129, 0.2);
+        border-radius: 16px; padding: 2.5rem; color: #e2e8f0; line-height: 1.8;
+    }
+    .article-render h2 { color: #10b981; font-weight: 700; margin-top: 2rem; margin-bottom: 1rem; border-left: 4px solid #10b981; padding-left: 15px; }
+    .article-render h3 { color: #fff; font-weight: 600; margin-top: 1.5rem; margin-bottom: 1rem; }
+    .article-render p { margin-bottom: 1.25rem; font-size: 1.05rem; color: #cbd5e1; }
+    .article-render ul, .article-render ol { margin-bottom: 1.5rem; padding-left: 1.5rem; color: #cbd5e1; }
+    .article-render li { margin-bottom: 0.5rem; }
+    .article-render blockquote {
+        border-left: 4px solid #10b981; padding: 1rem 1.5rem;
+        background: rgba(16, 185, 129, 0.05); font-style: italic; margin: 1.5rem 0; color: #a5b4fc;
+    }
+
+    /* === 📟 終端機樣式 === */
+    .terminal-box {
+        background: #0d1117; border: 1px solid #30363d; border-radius: 12px;
+        overflow: hidden; margin-top: 1.5rem; font-family: 'Fira Code', monospace;
+    }
+    .terminal-header {
+        background: #161b22; padding: 10px 15px; border-bottom: 1px solid #30363d;
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .window-controls { display: flex; gap: 6px; }
+    .control-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-red { background: #ff5f56; } .dot-yellow { background: #ffbd2e; } .dot-green { background: #27c93f; }
+    .terminal-body { padding: 20px; color: #10b981; font-size: 0.95rem; }
+    .typing-cursor::after {
+        content: '_'; animation: blink 1s step-end infinite;
+    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+</style>
+
+<div class="lab-detail-container container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="breadcrumb-nav">
+            <a href="{% url 'home' %}"><i class="fa-solid fa-house"></i> 首頁</a>
+            <span class="mx-2 text-muted">/</span>
+            <a href="{% url 'lab_list' %}">實戰實驗室</a>
+            <span class="mx-2 text-muted">/</span>
+            <span class="active">實驗編號 #{{ project.pk }}</span>
+        </div>
+        
+        {% if user.is_superuser %}
+        <form action="{% url 'publish_lab_to_article' project.pk %}" method="post" style="display: inline;" 
+                onsubmit="this.querySelector('button').disabled=true; this.querySelector('button').innerHTML='<i class=\'fa-solid fa-spinner fa-spin me-1\'></i> 處理中...';">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success btn-sm rounded-pill px-3 fw-bold shadow-lg">
+                <i class="fa-solid fa-rocket me-1"></i> 發布到新手村
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    <div class="row g-5">
+        <div class="col-lg-7">
+            
+            {% if project.content %}
+            <div class="ai-content-box shadow-lg mb-5">
+                <div class="d-flex align-items-center mb-4">
+                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill">
+                        <i class="fa-solid fa-robot me-2"></i>AI 自動生成報告
+                    </span>
+                </div>
+                <div class="article-render">
+                    {{ project.content|safe }}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="media-stage shadow-lg">
+                {% if project.before_image and project.cover_image %}
+                    <img-comparison-slider>
+                      <img slot="first" src="{{ project.before_image.url }}" width="100%" />
+                      <img slot="second" src="{{ project.cover_image.url }}" width="100%" />
+                      <div slot="handle" class="custom-handle">
+                        <i class="fa-solid fa-arrows-left-right"></i>
+                      </div>
+                    </img-comparison-slider>
+                {% elif project.video %}
+                    <video controls autoplay loop muted playsinline>
+                        <source src="{{ project.video.url }}" type="video/mp4">
+                    </video>
+                {% elif project.cover_image %}
+                    <img src="{{ project.cover_image.url }}" alt="{{ project.title }}">
+                {% elif project.related_tool %}
+                    <img src="{% static 'images/tools/'|add:project.related_tool.slug|add:'.jpg' %}" 
+                         alt="{{ project.related_tool.name }}"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <div class="text-center text-muted" style="display: none;">
+                        <i class="fa-regular fa-image fa-4x mb-3"></i>
+                        <p>暫無影像資料</p>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted">
+                        <i class="fa-regular fa-image fa-4x mb-3"></i>
+                        <p>無影像佐證資料</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if project.before_image %}
+            <div class="text-center mt-3 text-muted small">
+                <i class="fa-solid fa-circle-half-stroke me-1"></i> 左右拖曳滑桿查看差異
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-lg-5">
+            <div class="sticky-top" style="top: 100px;">
+                <div class="mb-4">
+                    {% if project.related_tool %}
+                    <a href="{% url 'tool_list' %}?q={{ project.related_tool.name }}" class="badge bg-dark border border-success text-success mb-3 text-decoration-none">
+                        <i class="fa-solid fa-wrench me-1"></i> {{ project.related_tool.name }}
+                    </a>
+                    {% endif %}
+                    
+                    <h1 class="text-white fw-bold mb-3">{{ project.title }}</h1>
+                    
+                    <div class="d-flex align-items-center text-muted mb-4 small">
+                        <span class="me-3"><i class="fa-regular fa-calendar me-1"></i> {{ project.created_at|date:"Y/m/d" }}</span>
+                        <span><i class="fa-regular fa-eye me-1"></i> {{ project.views }} 瀏覽</span>
+                    </div>
+
+                    <div class="text-light opacity-75" style="line-height: 1.8;">
+                        <h6 class="text-info fw-bold mb-2">實驗心得：</h6>
+                        {{ project.description|striptags }}
+                    </div>
+                </div>
+
+                <hr class="border-secondary opacity-50 my-4">
+
+                <h5 class="text-white fw-bold mb-3">
+                    <i class="fa-solid fa-terminal text-success me-2"></i> Prompt 指令
+                </h5>
+
+                <div class="terminal-box">
+                    <div class="terminal-header">
+                        <div class="window-controls">
+                            <div class="control-dot dot-red"></div>
+                            <div class="control-dot dot-yellow"></div>
+                            <div class="control-dot dot-green"></div>
+                        </div>
+                        <span class="terminal-title text-muted small">prompt.sh</span>
+                        <button class="btn btn-sm text-secondary" onclick="copyPrompt(this)">
+                            <i class="fa-regular fa-copy"></i>
+                        </button>
+                    </div>
+                    <div class="terminal-body">
+                        {% if project.prompt_text %}
+                            <span class="text-primary me-2">➜</span><span id="promptText" class="typing-cursor">{{ project.prompt_text }}</span>
+                        {% else %}
+                            <span class="text-muted">// 未記錄指令參數</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="mt-5 d-flex gap-3">
+                    <a href="{% url 'lab_list' %}" class="btn btn-outline-secondary rounded-pill px-4">
+                        <i class="fa-solid fa-arrow-left me-1"></i>
+                    </a>
+                    {% if project.related_tool %}
+                    <a href="{% url 'tool_detail' project.related_tool.slug %}" class="btn btn-success rounded-pill px-4 flex-grow-1 fw-bold">
+                        前往工具頁面 <i class="fa-solid fa-bolt ms-2"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function copyPrompt(btn) {
+        const text = document.getElementById('promptText').innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check text-success"></i>';
+            setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
+        });
+    }
+</script>
+{% endblock %}

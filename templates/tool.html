@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Midjourney V6 完全指南 | AI Navigator</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- 沿用首頁變數 (Tiffany Green Theme) --- */
+        :root {
+            --bg-color: #0F172A;       
+            --primary-color: #0ABAB5;  /* Tiffany Green */
+            --accent-color: #8B5CF6;   
+            --text-main: #F8FAFC;      
+            --text-dim: #94A3B8;       
+            --glass-bg: rgba(255, 255, 255, 0.03); 
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --code-bg: #1E293B; /* 程式碼區塊背景 */
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+        }
+
+        a { text-decoration: none; color: inherit; transition: 0.3s; }
+        ul { list-style: none; }
+
+        /* --- 導覽列 (簡化版) --- */
+        header {
+            padding: 15px 0;
+            background: rgba(15, 23, 42, 0.9);
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        
+        .nav-inner { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-weight: 700; font-size: 1.2rem; display: flex; gap: 8px; align-items: center; }
+        .logo i { color: var(--primary-color); }
+
+        /* --- 主要佈局 (Grid System) --- */
+        .tool-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr; /* 左側 300px，右側自動 */
+            gap: 40px;
+            padding: 40px 0;
+        }
+
+        /* --- 左側：工具資訊卡 (Sticky Sidebar) --- */
+        .tool-sidebar {
+            position: sticky;
+            top: 100px; /* 捲動時固定在頂部 */
+            height: fit-content;
+        }
+
+        .tool-info-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .tool-logo-large {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 16px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: #000;
+        }
+
+        .tool-title { font-size: 1.5rem; margin-bottom: 5px; }
+        .tool-cat { color: var(--primary-color); font-size: 0.9rem; margin-bottom: 20px; display: block; }
+        
+        .info-list { text-align: left; margin: 20px 0; border-top: 1px solid var(--glass-border); padding-top: 20px; }
+        .info-item { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.95rem; }
+        .info-label { color: var(--text-dim); }
+        
+        .btn-full {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 700;
+            margin-top: 10px;
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+            color: var(--bg-color);
+            box-shadow: 0 4px 14px rgba(10, 186, 181, 0.4);
+        }
+        .btn-primary:hover { background: #2dd4cf; transform: translateY(-2px); }
+
+        .btn-outline {
+            border: 1px solid var(--glass-border);
+            color: var(--text-dim);
+        }
+        .btn-outline:hover { border-color: var(--primary-color); color: var(--primary-color); }
+
+        /* --- 右側：內容區 --- */
+        .content-section { margin-bottom: 50px; }
+        
+        .section-header {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-header i { color: var(--primary-color); font-size: 1.4rem; }
+
+        p { margin-bottom: 1.5em; color: #cbd5e1; }
+
+        /* --- 參數表格樣式 --- */
+        .param-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(255,255,255,0.02);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+        
+        .param-table th, .param-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        
+        .param-table th { background: rgba(255,255,255,0.05); color: var(--primary-color); }
+        .code-tag { font-family: 'Courier New', monospace; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; color: #ff79c6; }
+
+        /* --- Prompt 複製區塊 (核心功能) --- */
+        .prompt-box {
+            background: var(--code-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            margin-bottom: 25px;
+            position: relative; /* 為了放複製按鈕 */
+            overflow: hidden;
+        }
+
+        .prompt-header {
+            padding: 10px 20px;
+            background: rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .prompt-label { font-size: 0.85rem; color: var(--text-dim); font-weight: 600; }
+
+        .copy-btn {
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            color: var(--text-dim);
+            padding: 4px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .copy-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .prompt-content {
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            color: #a5b3ce;
+            white-space: pre-wrap; /* 自動換行 */
+            line-height: 1.6;
+        }
+        
+        /* 語法高亮模擬 */
+        .hl-param { color: #ff79c6; } /* 參數粉紅色 */
+        .hl-value { color: #f1fa8c; } /* 數值黃色 */
+
+        /* --- 手機版響應式 --- */
+        @media (max-width: 768px) {
+            .tool-layout { grid-template-columns: 1fr; } /* 變單欄 */
+            .tool-sidebar { position: static; margin-bottom: 40px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container nav-inner">
+            <a href="index.html" class="logo">
+                <i class="fa-regular fa-compass"></i> AI Navigator
+            </a>
+            <a href="index.html" style="font-size: 0.9rem; color: var(--text-dim);">
+                <i class="fa-solid fa-arrow-left"></i> 回首頁
+            </a>
+        </div>
+    </header>
+
+    <div class="container tool-layout">
+        
+        <aside class="tool-sidebar">
+            <div class="tool-info-card">
+                <div class="tool-logo-large">
+                    <i class="fa-solid fa-paintbrush"></i>
+                </div>
+                <h1 class="tool-title">Midjourney</h1>
+                <span class="tool-cat">圖像生成 AI</span>
+                
+                <div class="info-list">
+                    <div class="info-item">
+                        <span class="info-label">收費模式</span>
+                        <span>訂閱制 (10 USD/月)</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">操作介面</span>
+                        <span>Discord / Web</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">難易度</span>
+                        <span>⭐⭐⭐⭐ (進階)</span>
+                    </div>
+                </div>
+
+                <a href="https://www.midjourney.com/" target="_blank" class="btn btn-full btn-primary">
+                    前往官網 <i class="fa-solid fa-external-link-alt" style="margin-left:5px;"></i>
+                </a>
+                <a href="#" class="btn btn-full btn-outline">
+                    <i class="fa-regular fa-bookmark"></i> 加入收藏
+                </a>
+            </div>
+        </aside>
+
+        <main>
+            
+            <section class="content-section">
+                <h2 class="section-header"><i class="fa-regular fa-lightbulb"></i> 工具簡介</h2>
+                <p>Midjourney 是目前市面上藝術性最強的 AI 繪圖工具。它透過 Discord 機器人接收指令，能夠生成照片級真實感 (Photorealistic) 或各種藝術風格的圖像。雖然上手門檻稍高（需要記參數），但產出的品質絕對值得。</p>
+            </section>
+
+            <section class="content-section">
+                <h2 class="section-header"><i class="fa-solid fa-list-check"></i> 常用參數速查</h2>
+                <table class="param-table">
+                    <thead>
+                        <tr>
+                            <th>指令</th>
+                            <th>用途</th>
+                            <th>範例</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="code-tag">--ar</span></td>
+                            <td>圖片比例 (Aspect Ratio)</td>
+                            <td>--ar 16:9</td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">--v</span></td>
+                            <td>模型版本 (Version)</td>
+                            <td>--v 6.0</td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">--s</span></td>
+                            <td>風格化程度 (0-1000)</td>
+                            <td>--s 750</td>
+                        </tr>
+                        <tr>
+                            <td><span class="code-tag">--no</span></td>
+                            <td>負向提示 (排除元素)</td>
+                            <td>--no text, blur</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="content-section">
+                <h2 class="section-header"><i class="fa-solid fa-wand-magic-sparkles"></i> 實戰 Prompt 範例</h2>
+                <p>試試看以下這組黃金公式，生成一張賽博龐克風格的東京街頭照片。</p>
+
+                <div class="prompt-box">
+                    <div class="prompt-header">
+                        <span class="prompt-label">範例 1：賽博龐克街景</span>
+                        <button class="copy-btn" onclick="copyText(this)">
+                            <i class="fa-regular fa-copy"></i> 複製指令
+                        </button>
+                    </div>
+                    <div class="prompt-content">/imagine prompt: A futuristic female cyborg standing in a rainy neon Tokyo street, cyberpunk style, cinematic lighting, reflection on wet ground, shot on 35mm lens, f/1.8, highly detailed, photorealistic <span class="hl-param">--ar</span> <span class="hl-value">16:9</span> <span class="hl-param">--v</span> <span class="hl-value">6.0</span> <span class="hl-param">--s</span> <span class="hl-value">250</span></div>
+                </div>
+
+                <p>或者，如果你想要一張可愛的吉卜力風格插畫：</p>
+
+                <div class="prompt-box">
+                    <div class="prompt-header">
+                        <span class="prompt-label">範例 2：吉卜力風格插畫</span>
+                        <button class="copy-btn" onclick="copyText(this)">
+                            <i class="fa-regular fa-copy"></i> 複製指令
+                        </button>
+                    </div>
+                    <div class="prompt-content">/imagine prompt: A cozy coffee shop in the forest, Studio Ghibli style, watercolor texture, warm sunlight, cute cat on the roof, peaceful atmosphere <span class="hl-param">--ar</span> <span class="hl-value">4:3</span> <span class="hl-param">--niji</span> <span class="hl-value">6</span></div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        function copyText(btn) {
+            // 1. 找到按鈕所在的 .prompt-box，再找到裡面的 .prompt-content
+            const contentDiv = btn.parentElement.nextElementSibling;
+            const textToCopy = contentDiv.innerText;
+
+            // 2. 執行複製
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                // 3. 複製成功的視覺回饋
+                const originalHTML = btn.innerHTML;
+                
+                // 變色並改文字
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> 已複製';
+                btn.style.borderColor = 'var(--primary-color)';
+                btn.style.color = 'var(--primary-color)';
+
+                // 2秒後變回來
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.style.borderColor = 'var(--glass-border)';
+                    btn.style.color = 'var(--text-dim)';
+                }, 2000);
+            }).catch(err => {
+                console.error('複製失敗:', err);
+            });
+        }
+    </script>
+
+</body>
+</html>

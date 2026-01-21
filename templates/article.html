@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>秒殺 Excel 雜亂數據！Python 自動化實戰 | AI Navigator</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- 沿用 Tiffany Green 主題變數 --- */
+        :root {
+            --bg-color: #0F172A;       
+            --primary-color: #0ABAB5;  /* Tiffany Green */
+            --accent-color: #8B5CF6;   
+            --text-main: #F8FAFC;      
+            --text-dim: #94A3B8;       
+            --glass-bg: rgba(255, 255, 255, 0.03); 
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --code-bg: #1E293B;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.8; /* 文章行距要寬一點才好讀 */
+        }
+
+        a { text-decoration: none; color: inherit; transition: 0.3s; }
+        
+        /* --- 導覽列 --- */
+        header {
+            padding: 15px 0;
+            background: rgba(15, 23, 42, 0.9);
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        .nav-inner { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-weight: 700; font-size: 1.2rem; display: flex; gap: 8px; align-items: center; }
+        .logo i { color: var(--primary-color); }
+
+        /* --- 文章佈局 (Grid) --- */
+        .article-layout {
+            display: grid;
+            grid-template-columns: 250px 1fr 250px; /* 左目錄 | 中文章 | 右推薦 */
+            gap: 40px;
+            padding: 40px 0;
+        }
+
+        /* --- 左側：懸浮目錄 (TOC) --- */
+        .toc-sidebar {
+            position: sticky;
+            top: 100px;
+            height: fit-content;
+        }
+
+        .toc-title {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .toc-list li { margin-bottom: 10px; }
+        
+        .toc-list a {
+            font-size: 0.95rem;
+            color: var(--text-dim);
+            display: block;
+            padding-left: 10px;
+            border-left: 2px solid transparent;
+        }
+
+        .toc-list a:hover, .toc-list a.active {
+            color: var(--primary-color);
+            border-left-color: var(--primary-color);
+        }
+
+        /* --- 中間：文章本體 --- */
+        .article-content {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 40px;
+            /* 限制最大寬度以利閱讀 */
+            max-width: 800px; 
+        }
+
+        /* 文章頭部資訊 */
+        .article-header { margin-bottom: 30px; border-bottom: 1px solid var(--glass-border); padding-bottom: 30px; }
+        .article-meta { display: flex; gap: 15px; font-size: 0.9rem; color: var(--text-dim); margin-bottom: 15px; }
+        .meta-item i { margin-right: 5px; color: var(--primary-color); }
+        
+        h1 { font-size: 2.2rem; line-height: 1.3; margin-bottom: 15px; }
+        h2 { font-size: 1.6rem; margin-top: 40px; margin-bottom: 20px; color: white; display: flex; align-items: center; gap: 10px; }
+        h2::before { content: '#'; color: var(--primary-color); opacity: 0.5; }
+        
+        p { margin-bottom: 1.5rem; color: #cbd5e1; font-size: 1.05rem; }
+
+        /* 重點提示框 */
+        .callout {
+            background: rgba(10, 186, 181, 0.1);
+            border-left: 4px solid var(--primary-color);
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 25px 0;
+        }
+        .callout h4 { margin-bottom: 10px; color: var(--primary-color); }
+
+        /* 程式碼區塊 */
+        .code-block {
+            background: #111827;
+            border-radius: 8px;
+            margin: 25px 0;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+        }
+
+        .code-header {
+            background: #1F2937;
+            padding: 8px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            border-bottom: 1px solid #374151;
+        }
+
+        .code-body {
+            padding: 20px;
+            overflow-x: auto;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #e5e7eb;
+        }
+
+        /* 簡單的語法高亮模擬 */
+        .kw { color: #c678dd; } /* keyword (import, def) */
+        .str { color: #98c379; } /* string */
+        .func { color: #61afef; } /* function */
+        .com { color: #5c6370; font-style: italic; } /* comment */
+
+        /* --- 右側：相關推薦 --- */
+        .related-sidebar {
+            position: sticky;
+            top: 100px;
+            height: fit-content;
+        }
+
+        .related-card {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .related-tool-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .related-tool-item:last-child { border: none; margin: 0; padding: 0; }
+
+        .tool-icon-sm {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+        }
+
+        /* RWD */
+        @media (max-width: 1024px) {
+            .article-layout { grid-template-columns: 200px 1fr; } /* 隱藏右側 */
+            .related-sidebar { display: none; }
+        }
+        @media (max-width: 768px) {
+            .article-layout { grid-template-columns: 1fr; } /* 單欄 */
+            .toc-sidebar { display: none; } /* 手機版隱藏目錄 */
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container nav-inner">
+            <a href="index.html" class="logo">
+                <i class="fa-regular fa-compass"></i> AI Navigator
+            </a>
+            <a href="index.html" style="font-size: 0.9rem; color: var(--text-dim);">
+                <i class="fa-solid fa-arrow-left"></i> 回列表
+            </a>
+        </div>
+    </header>
+
+    <div class="container article-layout">
+        
+        <aside class="toc-sidebar">
+            <div class="toc-title">本文目錄</div>
+            <ul class="toc-list">
+                <li><a href="#" class="active">1. 前言：為什麼要用 AI？</a></li>
+                <li><a href="#">2. 準備工作與環境</a></li>
+                <li><a href="#">3. 步驟一：讓 AI 讀懂數據</a></li>
+                <li><a href="#">4. 步驟二：自動清洗資料</a></li>
+                <li><a href="#">5. 步驟三：產出圖表</a></li>
+                <li><a href="#">6. 下載完整程式碼</a></li>
+            </ul>
+        </aside>
+
+        <main class="article-content">
+            <div class="article-header">
+                <div class="article-meta">
+                    <span class="meta-item"><i class="fa-regular fa-calendar"></i> 2026-01-02</span>
+                    <span class="meta-item"><i class="fa-solid fa-layer-group"></i> 數據分析</span>
+                    <span class="meta-item"><i class="fa-solid fa-fire"></i> 難度：Lv.2</span>
+                </div>
+                <h1>秒殺 Excel 雜亂數據！<br>用 AI 自動清洗資料並產出圖表</h1>
+            </div>
+
+            <p>老闆丟給你一個 5000 筆資料的 CSV 檔，格式亂七八糟（有缺漏值、日期格式不統一），要求下班前交出「本季銷售趨勢圖」。這時候，不要再手動調整 Excel 了，讓 AI 幫你寫 Python 吧！</p>
+
+            <div class="callout">
+                <h4><i class="fa-solid fa-circle-info"></i> 學習重點</h4>
+                <p style="margin-bottom:0; color: var(--text-dim);">本篇教學將展示如何使用 <strong>ChatGPT Plus (GPT-4o)</strong> 的 Data Analysis 功能，在 5 分鐘內完成 Pandas 程式碼撰寫。</p>
+            </div>
+
+            <h2>2. 準備工作</h2>
+            <p>首先，請確保你的數據 CSV 檔案第一列是乾淨的標題（Header）。接著打開 ChatGPT，確認已選擇 GPT-4o 模型。</p>
+
+            <h2>3. 步驟一：讓 AI 讀懂數據</h2>
+            <p>上傳檔案後，輸入以下 Prompt 進行「定調」：</p>
+            
+            <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px; border-left:3px solid var(--accent-color); margin-bottom:20px;">
+                <span style="font-size:0.85rem; color:var(--accent-color); font-weight:bold;">PROMPT</span>
+                <p style="margin:5px 0 0; font-family:monospace; color:#ddd;">你現在是一位資深的數據分析師。我上傳了一個 CSV 檔，請幫我讀取前 5 行，並告訴我你對這些欄位的理解，以及是否有格式錯誤。</p>
+            </div>
+
+            <h2>4. 步驟二：自動清洗資料</h2>
+            <p>AI 讀取後，我們需要它幫忙寫 Python 腳本來處理空值。以下是 AI 生成的 Pandas 程式碼範例：</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span>clean_data.py</span>
+                    <span style="font-size:0.8rem; color:var(--primary-color);">Python</span>
+                </div>
+                <div class="code-body">
+<span class="kw">import</span> pandas <span class="kw">as</span> pd
+
+<span class="com"># 讀取數據</span>
+df = pd.read_csv(<span class="str">'sales_data.csv'</span>)
+
+<span class="com"># 1. 將日期欄位轉為 datetime 格式</span>
+df[<span class="str">'Date'</span>] = pd.to_datetime(df[<span class="str">'Date'</span>], errors=<span class="str">'coerce'</span>)
+
+<span class="com"># 2. 填補空值 (使用平均數)</span>
+df[<span class="str">'Sales'</span>].fillna(df[<span class="str">'Sales'</span>].mean(), inplace=<span class="kw">True</span>)
+
+<span class="kw">print</span>(<span class="str">"資料清洗完成！目前筆數："</span>, len(df))
+                </div>
+            </div>
+
+            <p>將這段程式碼複製到你的 Python 環境執行，你會發現所有的 `#N/A` 都被完美處理了。</p>
+
+            <h2>6. 結語</h2>
+            <p>透過 AI 輔助，我們不需要背誦複雜的 Pandas 語法，只需要專注於「邏輯」與「需求」的描述。這才是 AI 時代的工程師生存之道。</p>
+
+            <div style="margin-top:50px; text-align:center;">
+                <a href="#" style="display:inline-block; background:var(--primary-color); color:var(--bg-color); padding:12px 30px; border-radius:50px; font-weight:700;">
+                    下載完整原始碼 (會員限定)
+                </a>
+            </div>
+
+        </main>
+
+        <aside class="related-sidebar">
+            <div class="toc-title">使用工具</div>
+            
+            <div class="related-card">
+                <div class="related-tool-item">
+                    <div class="tool-icon-sm"><i class="fa-solid fa-robot"></i></div>
+                    <div>
+                        <div style="font-weight:600;">ChatGPT</div>
+                        <div style="font-size:0.8rem; color:var(--text-dim);">文字生成 / 程式</div>
+                    </div>
+                </div>
+                <div class="related-tool-item">
+                    <div class="tool-icon-sm"><i class="fa-brands fa-python"></i></div>
+                    <div>
+                        <div style="font-weight:600;">Python</div>
+                        <div style="font-size:0.8rem; color:var(--text-dim);">Pandas 套件</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="toc-title">延伸閱讀</div>
+            <div class="related-card">
+                <ul style="font-size:0.9rem; color:var(--text-dim);">
+                    <li style="margin-bottom:10px;"><a href="#" class="hover-link">👉 如何用 AI 寫爬蟲？</a></li>
+                    <li><a href="#" class="hover-link">👉 Matplotlib 繪圖教學</a></li>
+                </ul>
+            </div>
+        </aside>
+
+    </div>
+
+</body>
+</html>

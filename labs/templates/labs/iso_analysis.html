@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}ISO 11608 劑量準確度分析儀{% endblock %}
+
+{% block content %}
+<style>
+    /* === 1. 全局設定 === */
+    body { background-color: #0b0f19 !important; overflow-x: hidden; color: #e2e8f0; }
+    
+    /* === 2. Hero Header (修正遮擋問題) === */
+    .lab-header { 
+        padding-top: 120px; /* ⭐ 關鍵：避開 Navbar */
+        padding-bottom: 3rem; 
+        text-align: center; 
+        background: radial-gradient(circle at top, rgba(16, 185, 129, 0.15) 0%, #0b0f19 70%); 
+    }
+
+    /* === 3. 卡片樣式 === */
+    .data-card { 
+        background: rgba(30, 41, 59, 0.5); 
+        border: 1px solid rgba(255, 255, 255, 0.1); 
+        border-radius: 16px; 
+        padding: 2rem; 
+        backdrop-filter: blur(10px); 
+        margin-bottom: 2rem; 
+    }
+
+    /* === 4. 狀態徽章 === */
+    .status-badge { 
+        font-size: 2rem; 
+        font-weight: 900; 
+        padding: 10px 40px; 
+        border-radius: 8px; 
+        text-transform: uppercase; 
+        letter-spacing: 2px; 
+        display: inline-block; 
+    }
+    .status-pass { background: #10b981; color: #000; box-shadow: 0 0 30px rgba(16, 185, 129, 0.4); }
+    .status-fail { background: #ef4444; color: #fff; box-shadow: 0 0 30px rgba(239, 68, 68, 0.4); }
+    
+    /* === 5. 表格樣式 === */
+    .table-dark-custom { width: 100%; border-collapse: separate; border-spacing: 0; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; overflow: hidden; }
+    .table-dark-custom th { background: rgba(15, 23, 42, 0.9); padding: 12px; text-align: center; color: #94a3b8; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.9rem; }
+    .table-dark-custom td { background: rgba(30, 41, 59, 0.4); padding: 12px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); color: #e2e8f0; font-size: 0.9rem; }
+    
+    .text-pass { color: #10b981; font-weight: bold; }
+    .text-fail { color: #ef4444; font-weight: bold; }
+    
+    /* === 6. 輸入框標籤 === */
+    .form-label { color: #94a3b8; font-size: 0.85rem; margin-bottom: 4px; }
+</style>
+
+<div class="lab-header">
+    <h1 class="display-4 fw-bold text-white mb-3" style="text-shadow: 0 0 20px rgba(16, 185, 129, 0.6);">
+        <i class="fa-solid fa-flask-vial text-success me-2"></i>ISO 11608 劑量分析儀
+    </h1>
+    <p class="text-secondary lead">融合 Minitab 核心演算法：規格計算 + K值判定 + AD常態檢定</p>
+</div>
+
+<div class="container pb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            
+            <div class="data-card">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <h5 class="text-white fw-bold mb-4 border-start border-4 border-success ps-3">1. 參數設定 (Input Parameters)</h5>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <label class="form-label">液體密度 (g/cm³)</label>
+                            {{ form.density }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">ISO K-Factor</label>
+                            {{ form.param_k }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">解析度 α (mL)</label>
+                            {{ form.param_alpha }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">公差 β (%)</label>
+                            {{ form.param_beta }}
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label">最小劑量 (Min)</label>
+                            {{ form.v_min }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">中間劑量 (Mid)</label>
+                            {{ form.v_mid }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">最大劑量 (Max)</label>
+                            {{ form.v_max }}
+                        </div>
+                    </div>
+
+                    <h5 class="text-white fw-bold mb-3 border-start border-4 border-info ps-3">2. 數據上傳</h5>
+                    <div class="mb-3">
+                        {{ form.data_file }}
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success w-100 fw-bold py-2">
+                        <i class="fa-solid fa-calculator me-2"></i> 執行分析
+                    </button>
+                </form>
+            </div>
+
+            {% if result %}
+            <div class="data-card border-success animate__animated animate__fadeInUp">
+                
+                <div class="text-center mb-5">
+                    <h5 class="text-muted mb-3">最終判定結果 (Final Verdict)</h5>
+                    {% if result.is_pass %}
+                        <div class="status-badge status-pass">PASS</div>
+                    {% else %}
+                        <div class="status-badge status-fail">FAIL</div>
+                    {% endif %}
+                </div>
+
+                <h5 class="text-white fw-bold mb-3"><i class="fa-solid fa-table me-2"></i>ISO 統計數據表</h5>
+                <div class="table-responsive mb-5">
+                    <table class="table-dark-custom">
+                        <thead>
+                            <tr>
+                                <th>組別 (Vset)</th>
+                                <th>LSL / USL</th>
+                                <th>N</th>
+                                <th>Mean</th>
+                                <th>SD</th>
+                                <th>K_act</th>
+                                <th>P-Value (AD)</th>
+                                <th>Verdict</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in result.report_data %}
+                            <tr>
+                                <td class="fw-bold text-info">{{ row.group }} ({{ row.v_set }})</td>
+                                <td>{{ row.lsl }} / {{ row.usl }}</td>
+                                <td>{{ row.n }}</td>
+                                <td>{{ row.mean }}</td>
+                                <td>{{ row.sd }}</td>
+                                <td class="{% if row.verdict == 'FAIL' %}text-danger{% endif %} fw-bold">{{ row.k_act }}</td>
+                                <td>{{ row.p_val }}</td>
+                                <td>
+                                    {% if row.verdict == 'PASS' %}
+                                        <span class="text-pass">PASS</span>
+                                    {% else %}
+                                        <span class="text-fail">FAIL</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <h5 class="text-white fw-bold mb-3"><i class="fa-solid fa-chart-area me-2"></i>分析圖表</h5>
+                <div class="bg-black p-2 rounded border border-secondary mb-3">
+                    {% if result.result_plot %}
+                        <img src="{{ result.result_plot.url }}" class="w-100 rounded" alt="Analysis Plot">
+                    {% else %}
+                        <p class="text-center text-muted py-5">圖表生成失敗</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+        </div>
+    </div>
+</div>
+{% endblock %}

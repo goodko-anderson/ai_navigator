@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}新手村 - AI 實戰教學{% endblock %}
+
+{% block content %}
+<style>
+    /* =========================================
+       1. 新手村專屬 Header (紫色系)
+       ========================================= */
+    .tutorial-header {
+        position: relative;
+        overflow: hidden;
+        min-height: auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        
+        /* ⭐ 保持 120px 避免被導覽列遮擋 */
+        padding-top: 120px; 
+        padding-bottom: 4rem;
+        
+        background: radial-gradient(circle at center, #1e1b4b 0%, #0f172a 100%);
+        border-bottom: 1px solid #334155;
+        text-align: center;
+        margin-bottom: 4rem;
+    }
+
+    .tutorial-header .container {
+        position: relative;
+        z-index: 10;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .bg-glow-purple {
+        position: absolute;
+        top: -50%; left: 50%; transform: translateX(-50%);
+        width: 100%; height: 200%;
+        background: radial-gradient(circle, rgba(168, 85, 247, 0.2) 0%, rgba(0,0,0,0) 60%);
+        pointer-events: none;
+        z-index: 1; 
+    }
+
+    .tutorial-icon {
+        color: #c084fc !important; 
+        text-shadow: 0 0 20px rgba(192, 132, 252, 0.6);
+        margin-right: 15px;
+        display: inline-block;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    
+    .tutorial-header:hover .tutorial-icon {
+        transform: translateY(-8px) rotate(-10deg) scale(1.1);
+        color: #d8b4fe !important;
+        text-shadow: 0 0 30px rgba(216, 180, 254, 0.8);
+    }
+
+    .search-input-purple {
+        background: rgba(30, 27, 75, 0.6);
+        border: 1px solid #6b21a8;
+        color: #fff;
+        border-radius: 50px;
+        padding: 12px 25px;
+        width: 100%;
+        max-width: 500px;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(5px);
+    }
+    .search-input-purple:focus {
+        outline: none;
+        background: rgba(30, 27, 75, 0.9);
+        border-color: #c084fc;
+        box-shadow: 0 0 20px rgba(192, 132, 252, 0.4);
+    }
+    .search-btn-purple {
+        position: absolute; right: 5px; top: 5px; bottom: 5px;
+        border-radius: 50%; width: 40px; border: none;
+        background: #c084fc; color: #000;
+        transition: transform 0.2s;
+    }
+    .search-btn-purple:hover { 
+        transform: scale(1.1); 
+        background: #d8b4fe;
+    }
+
+    /* =========================================
+       2. 文章列表樣式
+       ========================================= */
+    .article-card {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .article-card:hover {
+        transform: translateY(-5px);
+        border-color: #c084fc;
+        box-shadow: 0 10px 20px rgba(192, 132, 252, 0.1);
+    }
+
+    .article-link { text-decoration: none; color: inherit; }
+    .article-meta { font-size: 0.9rem; color: #94a3b8; }
+    
+    .line-clamp-3 {
+        display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.6;
+    }
+
+    /* 分頁按鈕優化 */
+    .custom-page-link {
+        background-color: #1e293b; border-color: #334155; color: #bfdbfe;
+        margin: 0 5px; border-radius: 5px;
+    }
+    .custom-page-link:hover { background-color: #334155; color: #fff; }
+    .page-item.active .custom-page-link {
+        background-color: #c084fc; border-color: #c084fc; color: white; font-weight: bold;
+    }
+
+    .text-tiffany { color: #10b981 !important; font-weight: bold; }
+    
+    .img-container {
+        height: 200px; width: 100%; background-color: #0f172a; position: relative;
+    }
+    .img-cover {
+        width: 100%; height: 100%; object-fit: cover;
+    }
+</style>
+
+<div class="tutorial-header">
+    <div class="bg-glow-purple"></div>
+    <div class="container">
+        <h1 class="fw-bold text-white mb-3" style="font-size: 3.5rem;">
+            <i class="fa-solid fa-graduation-cap tutorial-icon"></i> 新手村
+        </h1>
+        
+        <p class="text-light fs-5 opacity-75 mb-4">
+            從入門到精通，手把手教你駕馭 <span class="fw-bold" style="color: #c084fc;">{{ articles.paginator.count }}</span> 篇 AI 實戰攻略
+        </p>
+
+        <form method="get" action="" class="position-relative d-inline-block w-100" style="max-width: 500px;">
+            <input type="text" name="q" class="search-input-purple" placeholder="搜尋教學..." value="{{ request.GET.q|default:'' }}">
+            <button type="submit" class="search-btn-purple">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="container pb-5">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        
+        {% for article in articles %}
+        <div class="col">
+            <a href="{% url 'article_detail' article.slug %}" class="article-link">
+                <div class="article-card">
+                    
+                    <div class="img-container">
+                        {# 1. 使用者有上傳封面圖 (最優先) #}
+                        {% if article.cover_image %}
+                             <img src="{{ article.cover_image.url }}" class="img-cover" alt="{{ article.title }}">
+                        
+                        {# 2. 嘗試抓取 static/images/covers/ 裡的 PNG #}
+                        {# 使用 get_static_prefix 拼接字串，這是最穩定的寫法 #}
+                        {% elif article.related_tool %}
+                            <img src="{% get_static_prefix %}images/covers/{{ article.related_tool.slug }}.png" 
+                                 class="img-cover" 
+                                 alt="{{ article.related_tool.name }}"
+                                 {# 3. 如果 PNG 失敗，自動嘗試抓取 JPG (Tools 資料夾) #}
+                                 onerror="this.onerror=null;this.src='{% get_static_prefix %}images/tools/{{ article.related_tool.slug }}.jpg';">
+                        
+                        {# 4. 如果都沒有，顯示預設圖示 #}
+                        {% else %}
+                            <div class="d-flex align-items-center justify-content-center h-100 text-white-50">
+                                <i class="fa-solid fa-book-open fa-3x"></i>
+                            </div>
+                        {% endif %}
+
+                        <div class="position-absolute top-0 end-0 m-2">
+                            <span class="badge bg-dark bg-opacity-75 border border-secondary shadow-sm">
+                                {{ article.category|default:"教學" }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="p-4 flex-grow-1 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            {% if article.related_tool %}
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">
+                                <i class="fa-solid fa-wrench me-1"></i>{{ article.related_tool.name }}
+                            </span>
+                            {% else %}
+                            <span></span> 
+                            {% endif %}
+                            
+                            <small class="article-meta">
+                                <i class="fa-regular fa-calendar"></i> {{ article.created_at|date:"Y/m/d" }}
+                            </small>
+                        </div>
+
+                        <h4 class="fw-bold text-white mb-3">{{ article.title }}</h4>
+                        
+                        <p class="text-secondary small mb-4 line-clamp-3">
+                            {{ article.content|striptags|truncatechars:100 }}
+                        </p>
+
+                        <div class="d-flex justify-content-between align-items-center mt-auto pt-3 border-top border-secondary">
+                            <div class="d-flex align-items-center">
+                                {% if article.author.profile.avatar %}
+                                <img src="{{ article.author.profile.avatar.url }}" class="rounded-circle me-2" width="24" height="24">
+                                {% else %}
+                                <div class="rounded-circle bg-secondary me-2 d-flex align-items-center justify-content-center text-white small" style="width:24px;height:24px;">{{ article.author.username|slice:":1"|upper }}</div>
+                                {% endif %}
+                                <small class="text-muted small">{{ article.author.username }}</small>
+                            </div>
+                            <span class="text-tiffany small">攻略詳情 <i class="fa-solid fa-arrow-right ms-1"></i></span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <div class="p-5 border border-secondary rounded-3 border-dashed" style="border-style: dashed !important;">
+                <i class="fa-solid fa-book-open fa-3x mb-3 text-secondary"></i>
+                <h3 class="text-white">目前還沒有教學文章</h3>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if articles.has_other_pages %}
+    <nav aria-label="Page navigation" class="mt-5">
+        <ul class="pagination justify-content-center">
+            {% if articles.has_previous %}
+                <li class="page-item">
+                    <a class="page-link custom-page-link" href="?page={{ articles.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">&laquo;</a>
+                </li>
+            {% endif %}
+            
+            {% for num in articles.paginator.page_range %}
+                <li class="page-item {% if articles.number == num %}active{% endif %}">
+                    <a class="page-link custom-page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">{{ num }}</a>
+                </li>
+            {% endfor %}
+
+            {% if articles.has_next %}
+                <li class="page-item">
+                    <a class="page-link custom-page-link" href="?page={{ articles.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">&raquo;</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

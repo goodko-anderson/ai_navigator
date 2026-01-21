@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}逆向工程 - AI 之眼{% endblock %}
+
+{% block content %}
+<style>
+    /* === 1. 頁面專屬背景 (保留您的設計) === */
+    body {
+        background-color: #0f172a !important; /* 深藍黑背景 */
+        background-image: 
+            linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+        background-size: 40px 40px; /* 網格背景 */
+    }
+
+    /* === 2. 標題區塊 (修正間距避開 Navbar) === */
+    .lab-header { 
+        padding-top: 120px; /* ⭐ 關鍵：避開 Navbar */
+        padding-bottom: 3rem; 
+        text-align: center; 
+    }
+    
+    /* === 3. 眼睛圖示互動特效 === */
+    .eye-icon-wrapper {
+        width: 80px; height: 80px;
+        border-radius: 50%;
+        display: inline-flex; align-items: center; justify-content: center;
+        background-color: rgba(6, 182, 212, 0.1); /* Cyan 淡淡的底色 */
+        color: #06b6d4; /* Cyan 圖示顏色 */
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        cursor: default;
+        margin-bottom: 1.5rem;
+    }
+    .eye-icon {
+        font-size: 3.5rem;
+        text-shadow: 0 0 20px rgba(6, 182, 212, 0.6);
+        transition: all 0.3s ease;
+    }
+    /* Hover 互動：圓圈變大、變亮 */
+    .eye-icon-wrapper:hover {
+        transform: scale(1.1);
+        background-color: rgba(6, 182, 212, 0.25);
+        box-shadow: 0 0 30px rgba(6, 182, 212, 0.4);
+    }
+    /* Hover 互動：眼睛開始眨眼 (掃描中) */
+    .eye-icon-wrapper:hover .eye-icon {
+        color: #fff; /* 變亮白 */
+        animation: eye-blink 2s infinite; /* 眨眼動畫 */
+    }
+    @keyframes eye-blink {
+        0%, 45% { transform: scaleY(1); }
+        50% { transform: scaleY(0.1); } /* 閉眼 */
+        55%, 100% { transform: scaleY(1); } /* 張開 */
+    }
+
+    /* === 4. 上傳區塊 (深色風格) === */
+    .upload-card {
+        background: rgba(30, 41, 59, 0.5); /* 半透明深色 */
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 3rem;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    /* 虛線拖曳區 */
+    .upload-area {
+        border: 2px dashed #475569; /* 深灰邊框 */
+        border-radius: 12px;
+        background: rgba(15, 23, 42, 0.6); /* 更深的內部 */
+        padding: 4rem 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative; overflow: hidden;
+    }
+    .upload-area:hover {
+        border-color: #06b6d4; /* hover 變亮青色 */
+        background: rgba(6, 182, 212, 0.05);
+    }
+    .upload-area i { color: #94a3b8; transition: color 0.3s; }
+    .upload-area:hover i { color: #06b6d4; transform: scale(1.1); }
+
+    /* 按鈕樣式 */
+    .btn-action {
+        background-color: #06b6d4; color: #000; font-weight: bold;
+        border: none; padding: 12px 30px; border-radius: 50px;
+        box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+        transition: all 0.3s ease;
+    }
+    .btn-action:hover {
+        background-color: #22d3ee;
+        box-shadow: 0 0 25px rgba(6, 182, 212, 0.6);
+        transform: translateY(-2px);
+    }
+    .btn-select-file {
+        background-color: #334155; color: #fff; font-weight: 600;
+        border: 1px solid #475569; padding: 10px 24px; border-radius: 50px;
+        margin-right: 15px; transition: all 0.2s;
+    }
+    .btn-select-file:hover { background-color: #475569; border-color: #94a3b8; }
+
+    /* 複製按鈕特效 */
+    .btn-copy-success {
+        background-color: #10b981 !important;
+        border-color: #10b981 !important;
+        color: white !important;
+    }
+</style>
+
+<div class="container pb-5">
+    
+    <div class="lab-header">
+        <div class="eye-icon-wrapper">
+            <i class="fa-solid fa-eye eye-icon"></i>
+        </div>
+        
+        <h1 class="fw-bold text-white mb-3">逆向工程引擎</h1>
+        <p class="text-secondary" style="font-size: 1.1rem;">
+            上傳任何圖像，AI 將為您解析其藝術風格、構圖與光影，並生成專屬的 Prompt 咒語。
+        </p>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="upload-card">
+                <form method="post" enctype="multipart/form-data" id="uploadForm">
+                    {% csrf_token %}
+                    
+                    <input type="file" name="image" id="id_image" class="d-none" accept="image/*" onchange="previewImage(this)">
+
+                    <div class="upload-area mb-4" onclick="document.getElementById('id_image').click();" id="dropZone">
+                        <div id="uploadContent">
+                            <i class="fa-solid fa-cloud-arrow-up fa-3x mb-3"></i>
+                            <h4 class="text-white fw-bold">拖放圖片至此，或點擊上傳</h4>
+                            <p class="text-muted small">支援 JPG, PNG, WebP 格式</p>
+                        </div>
+                        <img id="imgPreview" src="#" alt="Preview" style="display:none; max-height: 300px; max-width: 100%; border-radius: 8px; box-shadow: 0 0 20px rgba(0,0,0,0.5);">
+                    </div>
+
+                    <div class="d-flex justify-content-center mt-4">
+                        <button type="button" class="btn btn-select-file" onclick="document.getElementById('id_image').click();">
+                            選擇檔案
+                        </button>
+                        <button type="submit" class="btn btn-action" id="submitBtn">
+                            <i class="fa-solid fa-wand-magic-sparkles me-2"></i> 開始分析
+                        </button>
+                    </div>
+                </form>
+                
+                </div>
+
+            {% if result %}
+            <div class="upload-card mt-5 border-success animate__animated animate__fadeInUp">
+                <div class="d-flex align-items-center mb-4 border-bottom border-secondary pb-3">
+                    <i class="fa-solid fa-check-circle text-success fa-2x me-3"></i>
+                    <div>
+                        <h4 class="text-white fw-bold mb-0">解析完成</h4>
+                        <small class="text-muted">Reverse Engineering Complete</small>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="bg-black p-2 rounded border border-secondary mb-3">
+                            <img src="{{ result.image.url }}" class="w-100 rounded" alt="Source">
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <h5 class="text-info fw-bold mb-3"><i class="fa-solid fa-terminal me-2"></i>逆向 Prompt</h5>
+                        
+                        <div id="ai-result-area">
+                            {{ result.prompt_result|safe }}
+                        </div>
+                        
+                        <div class="text-end mt-3">
+                            <button id="copyBtn" class="btn btn-sm btn-outline-light rounded-pill px-4 py-2" onclick="copyPrompt()">
+                                <i class="fa-regular fa-copy me-1"></i> 複製咒語
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+<script>
+    // 預覽圖片功能
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('uploadContent').classList.add('d-none');
+                var img = document.getElementById('imgPreview');
+                img.src = e.target.result;
+                img.style.display = 'inline-block';
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // 拖放功能支援 (Drag and Drop)
+    const dropZone = document.getElementById('dropZone');
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, highlight, false);
+    });
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight(e) { dropZone.style.borderColor = '#06b6d4'; dropZone.style.background = 'rgba(6, 182, 212, 0.05)'; }
+    function unhighlight(e) { dropZone.style.borderColor = '#475569'; dropZone.style.background = 'rgba(15, 23, 42, 0.6)'; }
+
+    dropZone.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        var dt = e.dataTransfer;
+        var files = dt.files;
+        document.getElementById('id_image').files = files;
+        previewImage(document.getElementById('id_image'));
+    }
+
+    // ⭐ 複製功能 (增強版 UX)
+    function copyPrompt() {
+        // 抓取後端回傳的 HTML 中，class 為 'font-monospace' 的區塊 (Prompt 通常放在這)
+        const codeBlock = document.querySelector('.font-monospace');
+        const btn = document.getElementById('copyBtn');
+        
+        let textToCopy = "";
+        
+        if (codeBlock) {
+            textToCopy = codeBlock.innerText;
+        } else {
+            // 如果找不到特定區塊，就複製整個結果文字
+            textToCopy = document.getElementById('ai-result-area').innerText;
+        }
+
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            // 成功複製的視覺回饋
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check me-1"></i> 已複製';
+            btn.classList.add('btn-copy-success');
+            btn.classList.remove('btn-outline-light');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalHtml;
+                btn.classList.remove('btn-copy-success');
+                btn.classList.add('btn-outline-light');
+            }, 2000);
+        }).catch(err => {
+            console.error('Copy failed', err);
+            alert('複製失敗，請手動選取文字複製。');
+        });
+    }
+</script>
+{% endblock %}

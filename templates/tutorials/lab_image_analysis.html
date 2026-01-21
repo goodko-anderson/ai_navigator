@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}逆向工程引擎 - Image to Prompt{% endblock %}
+
+{% block content %}
+<style>
+    /* === 頁面專屬樣式 === */
+    body {
+        background-color: #0f172a !important; /* 深藍色背景 */
+        color: #e2e8f0;
+    }
+
+    /* Hero 區域樣式 */
+    .analysis-hero {
+        position: relative;
+        /* 👇 關鍵修改：增加頂部內距，避開固定導覽列 (原本可能太小，改成 140px 左右) */
+        padding-top: 140px; 
+        padding-bottom: 80px;
+        background: radial-gradient(circle at top center, rgba(56, 189, 248, 0.15) 0%, rgba(15, 23, 42, 0) 70%);
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        overflow: hidden;
+    }
+    
+    /* 背景裝飾線條 */
+    .hero-grid {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background-image: 
+            linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 50px 50px;
+        pointer-events: none; z-index: -1;
+    }
+
+    /* 上傳區塊卡片 */
+    .upload-card {
+        background: rgba(30, 41, 59, 0.6);
+        backdrop-filter: blur(12px);
+        border: 2px dashed rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        transition: all 0.3s ease;
+    }
+    .upload-card:hover {
+        border-color: #38bdf8;
+        background: rgba(30, 41, 59, 0.8);
+    }
+
+    /* Prompt 結果區塊 */
+    .result-card {
+        background: #1e293b;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+    }
+
+    .prompt-terminal {
+        background: #0f172a;
+        color: #a5b4fc; font-family: 'Courier New', monospace;
+        padding: 20px; border-radius: 12px; border: 1px solid #334155;
+        white-space: pre-wrap; word-break: break-all; max-height: 400px; overflow-y: auto;
+    }
+</style>
+
+<section class="analysis-hero text-center">
+    <div class="hero-grid"></div>
+    <div class="container">
+        <i class="fa-solid fa-eye fa-4x text-info mb-4 animate-pulse"></i>
+        <h1 class="display-4 fw-black text-white mb-3">逆向工程引擎</h1>
+        <p class="lead text-white-50 mb-0 mx-auto" style="max-width: 800px;">
+            上傳任何圖像，AI 將為您解析其藝術風格、構圖與光影，並生成專屬的 Prompt 咒語。
+        </p>
+    </div>
+</section>
+
+<section class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            
+            <div class="upload-card p-5 mb-5 text-center">
+                <form method="post" enctype="multipart/form-data" id="uploadForm">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <i class="fa-solid fa-cloud-arrow-up fa-3x text-white-50 mb-3"></i>
+                        <h4 class="text-white">拖放圖片至此，或點擊上傳</h4>
+                        <p class="text-white-50 small">支援 JPG, PNG, WebP 格式</p>
+                    </div>
+                    
+                    <input type="file" name="upload_image" id="fileInput" class="d-none" accept="image/*" required onchange="showPreview(this)">
+                    
+                    <div id="previewArea" class="d-none mb-4">
+                        <img id="imagePreview" src="#" alt="預覽圖" class="img-fluid rounded-4 shadow-lg border border-secondary" style="max-height: 300px;">
+                    </div>
+
+                    <button type="button" class="btn btn-outline-info rounded-pill px-4 me-2" onclick="document.getElementById('fileInput').click()">
+                        選擇檔案
+                    </button>
+                    <button type="submit" class="btn btn-info rounded-pill px-4 fw-bold shadow-sm" id="submitBtn" disabled>
+                        <i class="fa-solid fa-wand-magic-sparkles me-1"></i> 開始分析
+                    </button>
+                </form>
+
+                <div id="loadingSpinner" class="d-none mt-4">
+                    <div class="spinner-border text-info" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="text-info mt-2 animate-pulse">正在調用 Gemini Vision 模型進行深度分析...</p>
+                </div>
+            </div>
+
+            {% if result_prompt %}
+            <div class="result-card animate-fade-in-up">
+                <div class="card-header bg-transparent border-bottom border-secondary p-4">
+                    <div class="d-flex align-items-center">
+                        <i class="fa-solid fa-terminal text-success me-3 fs-4"></i>
+                        <h4 class="text-white mb-0">分析成功！您的 Prompt 咒語</h4>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row">
+                        {% if image_url %}
+                        <div class="col-md-4 mb-4 mb-md-0">
+                            <h6 class="text-white-50 mb-2">原始圖片</h6>
+                            <img src="{{ image_url }}" class="img-fluid rounded-4 border border-secondary">
+                        </div>
+                        {% endif %}
+                        <div class="{% if image_url %}col-md-8{% else %}col-12{% endif %}">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="text-white-50 mb-0">Midjourney / Stable Diffusion 指令</h6>
+                                <button class="btn btn-sm btn-dark border-secondary rounded-pill px-3" onclick="copyPrompt(this)">
+                                    <i class="fa-regular fa-copy me-1"></i> 複製
+                                </button>
+                            </div>
+                            <div class="prompt-terminal" id="promptText">
+                                {{ result_prompt|linebreaksbr }}
+                            </div>
+                            <p class="text-white-50 small mt-3">
+                                <i class="fa-regular fa-lightbulb me-1 text-warning"></i>
+                                提示：您可以將此咒語貼到 Midjourney (使用 /imagine) 或 Stable Diffusion 中生成相似圖片。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</section>
+
+<script>
+    function showPreview(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('imagePreview').src = e.target.result;
+                document.getElementById('previewArea').classList.remove('d-none');
+                document.getElementById('submitBtn').disabled = false;
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    document.getElementById('uploadForm').addEventListener('submit', function() {
+        document.getElementById('submitBtn').classList.add('d-none');
+        document.getElementById('loadingSpinner').classList.remove('d-none');
+    });
+
+    function copyPrompt(btn) {
+        const text = document.getElementById('promptText').innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check text-success"></i> 已複製';
+            setTimeout(() => {
+                btn.innerHTML = originalHtml;
+            }, 2000);
+        });
+    }
+</script>
+
+<style>
+    /* 簡單動畫 */
+    .animate-pulse { animation: pulse 2s infinite; }
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.6; }
+        100% { opacity: 1; }
+    }
+    .animate-fade-in-up { animation: fadeInUp 0.5s ease-out; }
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+{% endblock %}

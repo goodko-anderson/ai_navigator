@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}戰情室 - AI Navigator{% endblock %}
+
+{% block content %}
+<style>
+    body { background-color: #0b0f19 !important; color: #e2e8f0; }
+    /* 👇 這裡改成 7rem，避免被 Fixed Navbar 擋住 */
+    .dashboard-container { padding-top: 7rem; padding-bottom: 4rem; min-height: 100vh; }
+    
+    .profile-card {
+        background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 2rem;
+        text-align: center; height: 100%;
+    }
+    .profile-img-large {
+        width: 100px; height: 100px; border-radius: 50%; object-fit: cover;
+        border: 3px solid #3b82f6; margin-bottom: 1rem;
+    }
+    .avatar-placeholder {
+        width: 100px; height: 100px; background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        color: white; font-size: 2.5rem; font-weight: bold;
+        display: flex; align-items: center; justify-content: center;
+        border-radius: 50%; margin: 0 auto 1rem; border: 3px solid rgba(255,255,255,0.2);
+    }
+    
+    .dash-nav-link { display: block; padding: 12px 20px; margin-bottom: 8px; border-radius: 10px; color: #94a3b8; text-decoration: none; transition: all 0.3s; border: 1px solid transparent; background: rgba(255,255,255,0.02); }
+    .dash-nav-link:hover { background: rgba(59, 130, 246, 0.1); color: white; transform: translateX(5px); }
+    .dash-nav-link.active { background: linear-gradient(90deg, rgba(59, 130, 246, 0.2), transparent); color: #3b82f6; border-left: 3px solid #3b82f6; font-weight: bold; }
+    .logout-btn { background: none; border: none; width: 100%; text-align: left; color: #ef4444; }
+    .logout-btn:hover { background: rgba(239, 68, 68, 0.1); color: #f87171; }
+    .welcome-banner { background: linear-gradient(135deg, #1e40af 0%, #0f172a 100%); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 16px; padding: 2.5rem; color: white; margin-bottom: 2rem; position: relative; overflow: hidden; }
+    .stat-card { background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; padding: 1.5rem; height: 100%; transition: transform 0.3s; }
+    .stat-card:hover { transform: translateY(-5px); background: rgba(30, 41, 59, 0.6); }
+    .stat-value { font-size: 2.5rem; font-weight: 800; color: white; line-height: 1; margin-bottom: 5px; }
+    .fav-article-item { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 15px; margin-bottom: 10px; transition: all 0.3s; display: flex; align-items: center; justify-content: space-between; }
+    .fav-article-item:hover { border-color: #0dcaf0; transform: translateX(5px); }
+</style>
+
+<div class="dashboard-container">
+    <div class="container">
+        <div class="row g-4">
+            
+            <div class="col-lg-3">
+                <div class="profile-card">
+                    {% if user.profile.avatar %}
+                        <img src="{{ user.profile.avatar.url }}" class="profile-img-large" alt="Avatar">
+                    {% else %}
+                        <div class="avatar-placeholder">{{ user.username|slice:":1"|upper }}</div>
+                    {% endif %}
+                    
+                    <h4 class="fw-bold text-white mb-1">{{ user.username }}</h4>
+                    <p class="text-muted small mb-4">{{ user.email }}</p>
+                    <hr class="border-secondary opacity-25 my-4">
+                    
+                    <div class="d-flex flex-column gap-2">
+                        <a href="#" class="dash-nav-link active"><i class="fa-solid fa-chart-pie me-2"></i> 戰情總覽</a>
+                        <a href="{% url 'account_settings' %}" class="dash-nav-link"><i class="fa-solid fa-user-gear me-2"></i> 帳號設定</a>
+                        <form action="{% url 'logout' %}" method="post" class="w-100">
+                            {% csrf_token %}
+                            <button type="submit" class="dash-nav-link logout-btn"><i class="fa-solid fa-right-from-bracket me-2"></i> 登出系統</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-9">
+                <div class="welcome-banner">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-primary bg-opacity-25 text-white rounded-circle d-flex align-items-center justify-content-center border border-primary border-opacity-50" style="width: 60px; height: 60px;">
+                            <i class="fa-solid fa-satellite-dish fa-xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="fw-bold mb-1">歡迎回到指揮中心，{{ user.username }}</h2>
+                            <p class="mb-0 text-info opacity-75">您的個人 AI 戰備庫與知識庫皆已就緒。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4 mb-5">
+                    <div class="col-md-4">
+                        <div class="stat-card" style="border-top: 4px solid #f59e0b;">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <span class="text-warning opacity-75 small text-uppercase fw-bold">軍火庫收藏</span>
+                                <i class="fa-solid fa-rocket text-warning fs-4"></i>
+                            </div>
+                            <div class="stat-value text-white">{{ total_tools_fav }}</div>
+                            <small class="text-white-50">已裝備的 AI 工具</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card" style="border-top: 4px solid #0dcaf0;">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <span class="text-info opacity-75 small text-uppercase fw-bold">戰術手冊</span>
+                                <i class="fa-solid fa-bookmark text-info fs-4"></i>
+                            </div>
+                            <div class="stat-value text-white">{{ total_articles_fav }}</div>
+                            <small class="text-white-50">已收藏的實戰教學</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card" style="border-top: 4px solid #3b82f6;">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <span class="text-primary opacity-75 small text-uppercase fw-bold">推薦補給</span>
+                                <i class="fa-solid fa-lightbulb text-primary fs-4"></i>
+                            </div>
+                            {% if recommended_tool %}
+                                <div class="d-flex align-items-center gap-3">
+                                    {% if recommended_tool.image %}
+                                        <img src="{{ recommended_tool.image.url }}" style="width: 45px; height: 45px; border-radius: 8px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="bg-dark rounded p-2"><i class="fa-solid fa-rocket"></i></div>
+                                    {% endif %}
+                                    <div class="text-truncate">
+                                        <div class="fw-bold text-white text-truncate">{{ recommended_tool.name }}</div>
+                                        <a href="{% url 'tool_detail' recommended_tool.slug %}" class="text-info small text-decoration-none stretched-link">查看詳情 ></a>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="text-muted mt-2">暫無推薦</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-lg-6">
+                        <h5 class="text-white fw-bold mb-3"><i class="fa-solid fa-toolbox text-warning me-2"></i>軍火庫 ({{ total_tools_fav }})</h5>
+                        {% if favorite_tools %}
+                            <div class="d-flex flex-column gap-3">
+                                {% for tool in favorite_tools %}
+                                <div class="bg-dark bg-opacity-50 p-3 rounded-3 border border-secondary border-opacity-25 d-flex align-items-center gap-3">
+                                    {% if tool.image %}
+                                        <img src="{{ tool.image.url }}" style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="bg-black rounded p-2"><i class="fa-solid fa-rocket text-secondary"></i></div>
+                                    {% endif %}
+                                    <div class="flex-grow-1 overflow-hidden">
+                                        <h6 class="text-white mb-0 text-truncate">{{ tool.name }}</h6>
+                                        <small class="text-muted">{{ tool.category }}</small>
+                                    </div>
+                                    <a href="{% url 'tool_detail' tool.slug %}" class="btn btn-sm btn-outline-light rounded-pill">啟動</a>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4 border border-dashed border-secondary rounded-3">
+                                <p class="text-muted mb-2">暫無收藏工具</p>
+                                <a href="{% url 'tool_list' %}" class="btn btn-sm btn-outline-warning">前往軍火庫</a>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-lg-6">
+                        <h5 class="text-white fw-bold mb-3"><i class="fa-solid fa-book-open text-info me-2"></i>戰術手冊 ({{ total_articles_fav }})</h5>
+                        {% if favorite_articles %}
+                            <div class="d-flex flex-column gap-2">
+                                {% for article in favorite_articles %}
+                                <a href="{% url 'article_detail' article.slug %}" class="text-decoration-none">
+                                    <div class="fav-article-item">
+                                        <div class="overflow-hidden">
+                                            <h6 class="text-white mb-1 text-truncate">{{ article.title }}</h6>
+                                            <small class="text-info border border-info border-opacity-25 px-2 rounded-pill" style="font-size: 0.7em;">
+                                                {{ article.category }}
+                                            </small>
+                                        </div>
+                                        <i class="fa-solid fa-chevron-right text-muted small"></i>
+                                    </div>
+                                </a>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4 border border-dashed border-secondary rounded-3">
+                                <p class="text-muted mb-2">暫無收藏教學</p>
+                                <a href="{% url 'article_list' %}" class="btn btn-sm btn-outline-info">前往新手村</a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

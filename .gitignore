@@ -1,0 +1,22 @@
+# === 這裡面的東西絕對不準上傳 ===
+
+# 1. 您的保險箱 (含 API Key)
+.env
+
+# 2. 虛擬環境 (這是您電腦專用的，上傳也沒用且檔案超多)
+venv/
+.venv/
+
+# 3. Python 編譯檔 (垃圾暫存檔)
+__pycache__/
+*.pyc
+
+# 4. (選用) 本地資料庫 (如果您不想公開測試資料)
+db.sqlite3
+
+# 5. === 忽略測試產生的垃圾檔案 ===
+media/iso_data/
+media/iso_plots/
+media/lab_before/
+media/lab_covers/Gemini_Generated_*
+media/reverse_engineering/Gemini_Generated_*

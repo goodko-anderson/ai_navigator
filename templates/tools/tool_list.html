@@ -1,0 +1,290 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AI 軍火庫 - 所有工具{% endblock %}
+
+{% block content %}
+<style>
+    /* === 1. 背景與基礎設定 === */
+    body {
+        background-color: #0b0f19 !important;
+        overflow-x: hidden;
+    }
+    
+    /* 背景網格 */
+    .arsenal-grid-bg {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+        background-image: 
+            linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 60px 60px;
+        z-index: 0; pointer-events: none;
+    }
+
+    /* 頂部光暈 (Cyan) */
+    .top-glow {
+        position: absolute; top: -20%; left: 50%; transform: translateX(-50%);
+        width: 80%; height: 500px;
+        background: radial-gradient(ellipse at center, rgba(13, 202, 240, 0.15) 0%, rgba(0,0,0,0) 70%);
+        filter: blur(80px); z-index: 0; pointer-events: none;
+    }
+
+    /* === 2. Header 與 搜尋 === */
+    .arsenal-header {
+        position: relative; z-index: 2; 
+        /* 👇 關鍵修正：強制設定頂部間距為 160px，與實驗室對齊 */
+        padding-top: 160px !important; 
+        padding-bottom: 3rem;
+        text-align: center;
+    }
+    
+    /* 👇 新增：火箭圖示互動特效 */
+    .rocket-icon {
+        display: inline-block;
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    /* 滑鼠移到標題區塊時，火箭會旋轉並變色 */
+    .arsenal-header:hover .rocket-icon {
+        transform: translateY(-5px) rotate(-20deg) scale(1.1);
+        color: #0dcaf0 !important; /* 強制變亮青色 */
+        text-shadow: 0 0 20px rgba(13, 202, 240, 0.8);
+    }
+    
+    .search-bar-wrapper {
+        position: relative; max-width: 600px; margin: 0 auto;
+    }
+    .search-input {
+        background: rgba(30, 41, 59, 0.6);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: white; border-radius: 50px;
+        padding: 15px 30px; width: 100%;
+        transition: all 0.3s;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    .search-input:focus {
+        background: rgba(30, 41, 59, 0.9);
+        border-color: #0dcaf0; outline: none; 
+        box-shadow: 0 0 25px rgba(13, 202, 240, 0.3);
+    }
+    .search-btn {
+        position: absolute; right: 5px; top: 5px; bottom: 5px;
+        width: 45px; border-radius: 50%; border: none;
+        background: #0dcaf0; color: #000;
+        transition: transform 0.2s;
+    }
+    .search-btn:hover { transform: scale(1.1); background: #0aa2c0; }
+
+    /* === 3. 分類導航 (Pills) === */
+    .category-scroll {
+        display: flex; gap: 10px; overflow-x: auto; 
+        padding: 10px 5px; 
+        /* 👇 修正：增加上方間距，避免貼著搜尋框 */
+        margin-top: 2rem; 
+        margin-bottom: 2rem;
+        scrollbar-width: none; 
+        justify-content: center;
+        flex-wrap: wrap;
+        position: relative; z-index: 2;
+    }
+    .category-scroll::-webkit-scrollbar { display: none; }
+
+    .cat-pill {
+        background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+        color: #94a3b8; padding: 8px 20px; border-radius: 50px;
+        text-decoration: none; font-size: 0.9rem; transition: all 0.3s;
+        white-space: nowrap;
+    }
+    .cat-pill:hover {
+        background: rgba(255,255,255,0.1); color: white; border-color: rgba(255,255,255,0.3);
+    }
+    .cat-pill.active {
+        background: #0dcaf0; color: #000; border-color: #0dcaf0; font-weight: bold;
+        box-shadow: 0 0 15px rgba(13, 202, 240, 0.4);
+    }
+
+    /* === 4. 工具卡片 (Glassmorphism) === */
+    .tool-card {
+        background: rgba(30, 41, 59, 0.4);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 1.5rem;
+        height: 100%;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        display: flex; flex-direction: column;
+        position: relative; overflow: hidden;
+    }
+    
+    .tool-card:hover {
+        transform: translateY(-8px);
+        background: rgba(30, 41, 59, 0.6);
+        border-color: rgba(13, 202, 240, 0.3);
+        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
+    }
+
+    /* 卡片內的圖片容器 */
+    .tool-icon-box {
+        width: 60px; height: 60px;
+        border-radius: 12px;
+        background: #0f172a;
+        display: flex; align-items: center; justify-content: center;
+        margin-bottom: 1rem;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+    .tool-icon-img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* 熱度標籤 */
+    .hot-badge {
+        position: absolute; top: 1rem; right: 1rem;
+        font-size: 0.75rem; color: #fbbf24;
+        display: flex; align-items: center; gap: 4px;
+        background: rgba(251, 191, 36, 0.1);
+        padding: 4px 8px; border-radius: 6px;
+        border: 1px solid rgba(251, 191, 36, 0.2);
+    }
+
+    /* 卡片按鈕 */
+    .btn-tool-action {
+        margin-top: auto;
+        background: rgba(255,255,255,0.05); color: #fff;
+        border: none; width: 100%; padding: 8px;
+        border-radius: 8px; transition: 0.2s;
+        font-size: 0.9rem;
+    }
+    .btn-tool-action:hover {
+        background: #0dcaf0; color: #000; font-weight: bold;
+    }
+    
+    .tool-desc {
+        color: #94a3b8; font-size: 0.9rem; line-height: 1.6;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+        margin-bottom: 1rem;
+    }
+
+    /* 分頁樣式修正 */
+    .custom-page-link {
+        background-color: rgba(30, 41, 59, 0.6); border-color: rgba(255, 255, 255, 0.1); color: #94a3b8;
+        margin: 0 4px; border-radius: 8px;
+    }
+    .custom-page-link:hover {
+        background-color: #334155; color: white;
+    }
+    .page-item.active .custom-page-link {
+        background-color: #0dcaf0; border-color: #0dcaf0; color: #000; font-weight: bold;
+    }
+</style>
+
+<div class="arsenal-grid-bg"></div>
+<div class="top-glow"></div>
+
+<div class="container position-relative" style="z-index: 2;">
+    
+    <div class="arsenal-header">
+        <h1 class="display-4 fw-bold text-white mb-3" style="text-shadow: 0 0 30px rgba(13, 202, 240, 0.5);">
+            <i class="fa-solid fa-layer-group text-info me-2 rocket-icon"></i>AI 軍火庫
+        </h1>
+        <p class="text-secondary mb-5">精選 <span class="text-white fw-bold">{{ tools.paginator.count }}</span> 款頂級 AI 生產力工具，武裝你的創意。</p>
+        
+        <form method="get" class="search-bar-wrapper">
+            {% if active_category %}
+                <input type="hidden" name="category" value="{{ active_category }}">
+            {% endif %}
+            <input type="text" name="q" class="search-input" placeholder="搜尋工具名稱、用途..." value="{{ query|default:'' }}">
+            <button type="submit" class="search-btn"><i class="fa-solid fa-magnifying-glass"></i></button>
+        </form>
+    </div>
+
+    <div class="category-scroll">
+        <a href="{% url 'tool_list' %}{% if query %}?q={{ query }}{% endif %}" 
+           class="cat-pill {% if not active_category %}active{% endif %}">
+           全部工具
+        </a>
+        
+        {% for cat in categories %}
+            <a href="?category={{ cat }}{% if query %}&q={{ query }}{% endif %}" 
+               class="cat-pill {% if active_category == cat %}active{% endif %}">
+                {{ cat }}
+            </a>
+        {% endfor %}
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4 pb-5">
+        {% for tool in tools %}
+        <div class="col">
+            <a href="{% url 'tool_detail' tool.slug %}" class="text-decoration-none">
+                <div class="tool-card">
+                    {% if tool.views > 100 %}
+                        <div class="hot-badge"><i class="fa-solid fa-fire"></i> Hot</div>
+                    {% endif %}
+
+                    <div class="tool-icon-box">
+                        {% if tool.image %}
+                            <img src="{{ tool.image.url }}" class="tool-icon-img" alt="{{ tool.name }}">
+                        {% else %}
+                            <i class="fa-solid fa-toolbox fa-2x text-secondary"></i>
+                        {% endif %}
+                    </div>
+
+                    <h5 class="text-white fw-bold mb-1">{{ tool.name }}</h5>
+                    <div class="mb-3">
+                        <span class="badge bg-secondary bg-opacity-25 text-light border border-secondary border-opacity-25 rounded-pill px-2" style="font-weight: normal; font-size: 0.75rem;">
+                            {{ tool.category|default:"General" }}
+                        </span>
+                    </div>
+
+                    <p class="tool-desc">
+                        {{ tool.description|striptags|truncatechars:60|default:"暫無描述..." }}
+                    </p>
+
+                    <div class="d-flex justify-content-between align-items-center mt-auto mb-3 text-muted small">
+                        <span><i class="fa-regular fa-eye me-1"></i>{{ tool.views }}</span>
+                        <span><i class="fa-solid fa-server me-1"></i>Ready</span>
+                    </div>
+
+                    <button class="btn btn-tool-action">
+                        查看詳情 <i class="fa-solid fa-arrow-right ms-1"></i>
+                    </button>
+                </div>
+            </a>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <div class="p-5 border border-secondary border-dashed rounded text-muted" style="background: rgba(255,255,255,0.02);">
+                <i class="fa-solid fa-box-open fa-3x mb-3 opacity-50"></i>
+                <h4>找不到相關軍火</h4>
+                <p>試試看其他關鍵字或分類？</p>
+                <a href="{% url 'tool_list' %}" class="btn btn-outline-info rounded-pill mt-2">清除篩選</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if tools.has_other_pages %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if tools.has_previous %}
+                <li class="page-item">
+                    <a class="page-link custom-page-link" href="?page={{ tools.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if active_category %}&category={{ active_category }}{% endif %}">&laquo;</a>
+                </li>
+            {% endif %}
+
+            {% for i in tools.paginator.page_range %}
+                <li class="page-item {% if tools.number == i %}active{% endif %}">
+                    <a class="page-link custom-page-link" href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}{% if active_category %}&category={{ active_category }}{% endif %}">{{ i }}</a>
+                </li>
+            {% endfor %}
+
+            {% if tools.has_next %}
+                <li class="page-item">
+                    <a class="page-link custom-page-link" href="?page={{ tools.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if active_category %}&category={{ active_category }}{% endif %}">&raquo;</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+</div>
+{% endblock %}
