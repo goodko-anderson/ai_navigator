@@ -18,4 +18,6 @@ urlpatterns = [
     path('iso-analysis/', views.iso_analysis_view, name='iso_analysis'),
     # 👇 新增這一行：ISO 11608 分析儀的路徑
     path('iso-analysis/', views.iso_analysis_view, name='iso_analysis'),
+    # 👇 新增這一行：
+    path('chat/', views.chat_view, name='chat_view'),
 ]

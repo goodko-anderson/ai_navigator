@@ -551,3 +551,35 @@ def iso_analysis_view(request):
         'form': form, 
         'result': analysis_result
     })
+
+    # labs/views.py 的最下面
+
+@login_required
+def chat_view(request):
+    """
+    自由對話實驗室 (Free Chat Lab)
+    功能：提供一個類似 ChatGPT 的簡易介面，讓使用者直接測試 Gemini 模型。
+    """
+    response_text = None
+    user_input = ""
+    
+    if request.method == 'POST':
+        user_input = request.POST.get('user_input', '').strip()
+        if user_input:
+            try:
+                # 這裡我們直接呼叫之前寫好的共用函式
+                # 為了讓 AI 知道這是聊天，我們可以加一點點 System Prompt (可選)
+                prompt = f"使用者說：{user_input}\n請以繁體中文、友善且專業的語氣回答。"
+                
+                result_text, used_model = try_generate_content(prompt)
+                
+                # 為了讓前端顯示漂亮，將換行符號轉成 HTML 的 <br> (簡易處理)
+                response_text = result_text.replace('\n', '<br>')
+                
+            except Exception as e:
+                messages.error(request, f"連線錯誤：{str(e)}")
+    
+    return render(request, 'labs/chat.html', {
+        'response': response_text,
+        'user_input': user_input
+    })

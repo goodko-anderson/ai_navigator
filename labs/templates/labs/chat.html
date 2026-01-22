@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    /* === 自定義暗黑聊天室樣式 === */
+    body {
+        background-color: #0b0f19 !important; /* 強制背景深色 */
+    }
+
+    .chat-page-container {
+        padding-top: 8rem; /* ✅ 保持修正：加大頂部間距 */
+        min-height: 100vh;
+    }
+
+    /* 卡片本體：深色玻璃擬態 */
+    .chat-card {
+        background: rgba(30, 41, 59, 0.6); 
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    /* 聊天歷史區域 */
+    .chat-history-area {
+        background-color: #0f172a; 
+        border-bottom: 1px solid #334155;
+    }
+
+    /* AI 訊息泡泡 */
+    .ai-bubble {
+        background-color: #1e293b; 
+        color: #e2e8f0;
+        border: 1px solid #334155;
+    }
+
+    /* 使用者訊息泡泡 */
+    .user-bubble {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
+    }
+
+    /* 輸入框區域 */
+    .chat-footer {
+        background-color: #1e293b;
+        border-top: 1px solid #334155;
+    }
+
+    /* 輸入框本體 */
+    .form-control-dark {
+        background-color: #0f172a !important;
+        border: 1px solid #334155 !important;
+        color: #e2e8f0 !important;
+    }
+    .form-control-dark::placeholder { color: #64748b; }
+    .form-control-dark:focus {
+        border-color: #10b981 !important;
+        box-shadow: 0 0 0 0.25rem rgba(16, 185, 129, 0.25) !important;
+    }
+    
+    /* ✅ 恢復：標題漸層特效 (為了讓原本的標題更好看) */
+    .text-gradient-title {
+        background: linear-gradient(to right, #4ade80, #3b82f6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 0 30px rgba(74, 222, 128, 0.3);
+    }
+</style>
+
+<div class="container chat-page-container pb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            
+            <div class="text-center mb-5">
+                <h1 class="display-4 fw-bold text-white">
+                    🤖 <span class="text-gradient-title">AI 自由對話實驗室</span>
+                </h1>
+                <p class="lead text-muted mt-2">基於 Google Gemini 2.0 Flash 模型</p>
+            </div>
+
+            <div class="card chat-card rounded-4 overflow-hidden">
+                
+                <div class="card-header bg-black bg-opacity-25 text-white p-3 d-flex justify-content-between align-items-center border-bottom border-secondary border-opacity-25">
+                    <span class="fw-bold"><i class="bi bi-chat-dots-fill me-2 text-success"></i>Gemini Chat</span>
+                    <span class="badge bg-success bg-opacity-25 text-success border border-success">Online</span>
+                </div>
+                
+                <div class="card-body chat-history-area p-4" style="min-height: 400px;">
+                    
+                    {% if not response and not user_input %}
+                    <div class="text-center text-muted my-5">
+                        <div class="mb-3">
+                            <i class="bi bi-robot display-1 text-secondary opacity-10"></i>
+                        </div>
+                        <h4 class="text-light opacity-75">有什麼我可以幫您的嗎？</h4>
+                        <p class="text-secondary small">試著問我：「Python 是什麼？」或「寫一首關於台北的詩」</p>
+                    </div>
+                    {% endif %}
+
+                    {% if user_input %}
+                        <div class="d-flex justify-content-end mb-4">
+                            <div class="user-bubble p-3 rounded-3" style="max-width: 80%; border-bottom-right-radius: 0 !important;">
+                                <div class="d-flex align-items-center mb-1 opacity-75 small border-bottom border-white border-opacity-25 pb-1">
+                                    <i class="bi bi-person-circle me-1"></i> You
+                                </div>
+                                <div style="white-space: pre-wrap;">{{ user_input }}</div>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    {% if response %}
+                        <div class="d-flex justify-content-start mb-4">
+                            <div class="ai-bubble p-3 rounded-3 shadow-sm" style="max-width: 85%; border-top-left-radius: 0 !important;">
+                                <div class="d-flex align-items-center mb-2 text-success fw-bold small border-bottom border-secondary border-opacity-25 pb-2">
+                                    <i class="bi bi-stars me-1"></i> Gemini
+                                </div>
+                                <div class="mt-2" style="line-height: 1.6;">
+                                    {{ response|safe }}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                </div>
+
+                <div class="card-footer chat-footer p-3">
+                    <form method="post" action="{% url 'chat_view' %}" class="d-flex gap-2">
+                        {% csrf_token %}
+                        <input type="text" name="user_input" class="form-control form-control-lg form-control-dark rounded-pill px-4" placeholder="輸入訊息..." required autofocus autocomplete="off">
+                        <button type="submit" class="btn btn-success btn-lg rounded-circle shadow-lg" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-send-fill"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="{% url 'lab_list' %}" class="text-decoration-none text-muted hover-light">
+                    <i class="bi bi-arrow-left me-1"></i> 返回實驗室列表
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
