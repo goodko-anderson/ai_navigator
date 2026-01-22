@@ -9,6 +9,7 @@ from django.utils.text import slugify # 👈 引入這個來做中文網址
 import uuid
 import json
 import time
+import os  # ✅ 新增：引入 OS 模組，用來自動建立資料夾
 import google.generativeai as genai
 import PIL.Image
 import pandas as pd
@@ -231,7 +232,7 @@ def publish_lab_to_article(request, pk):
             author=request.user, 
             category="實戰教學",
             related_tool=project.related_tool, 
-            slug=new_slug,           
+            slug=new_slug,            
             is_published=True, 
             cover_image=project.cover_image 
         )
@@ -247,6 +248,9 @@ def reverse_engineering_view(request):
     if request.method == 'POST':
         form = ReverseImageForm(request.POST, request.FILES)
         if form.is_valid():
+            # ✅ 新增：確保 lab_before 資料夾存在 (防止滑桿壞掉)
+            os.makedirs(os.path.join(settings.MEDIA_ROOT, 'lab_before'), exist_ok=True)
+
             reverse_obj = form.save(commit=False)
             reverse_obj.user = request.user
             reverse_obj.save()
@@ -278,7 +282,6 @@ def reverse_engineering_view(request):
 # ==========================================
 # 2. ISO 11608 核心演算法 (Anderson-Darling Minitab 版)
 # ==========================================
-# 這裡恢復成寬鬆好讀的格式，方便理解與維護。
 
 def calculate_iso_specs(v_set, alpha, beta):
     """計算 ISO 11608 規格限值 (LSL, USL)"""
@@ -368,6 +371,10 @@ def iso_analysis_view(request):
     if request.method == 'POST':
         form = IsoAnalysisForm(request.POST, request.FILES)
         if form.is_valid():
+            # ✅ 新增：自我修復機制 (自動建立消失的資料夾)
+            os.makedirs(os.path.join(settings.MEDIA_ROOT, 'iso_data'), exist_ok=True)
+            os.makedirs(os.path.join(settings.MEDIA_ROOT, 'iso_plots'), exist_ok=True)
+
             iso_obj = form.save(commit=False)
             iso_obj.user = request.user
             
@@ -398,10 +405,10 @@ def iso_analysis_view(request):
 
                 # 字體全面加大
                 plt.rcParams['font.size'] = 11          
-                plt.rcParams['axes.titlesize'] = 14     
-                plt.rcParams['axes.labelsize'] = 12     
-                plt.rcParams['xtick.labelsize'] = 10    
-                plt.rcParams['ytick.labelsize'] = 10    
+                plt.rcParams['axes.titlesize'] = 14      
+                plt.rcParams['axes.labelsize'] = 12      
+                plt.rcParams['xtick.labelsize'] = 10     
+                plt.rcParams['ytick.labelsize'] = 10     
                 plt.rcParams['legend.fontsize'] = 10    
 
                 # 顏色高對比優化
